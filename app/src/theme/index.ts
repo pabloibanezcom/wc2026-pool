@@ -1,19 +1,31 @@
 export const colors = {
-  primary: '#1a472a',     // Dark green (football pitch)
-  primaryLight: '#2d6b45',
-  accent: '#d4af37',      // Gold
-  background: '#f5f5f5',
-  surface: '#ffffff',
-  text: '#1a1a1a',
-  textSecondary: '#666666',
-  textLight: '#999999',
-  border: '#e0e0e0',
-  success: '#4caf50',
-  warning: '#ff9800',
-  error: '#f44336',
-  win: '#4caf50',
-  draw: '#ff9800',
-  loss: '#f44336',
+  bg: '#0f1115',
+  card: '#181b21',
+  card2: '#1e2229',
+  border: 'rgba(255,255,255,0.07)',
+  borderMid: 'rgba(255,255,255,0.11)',
+  accent: '#00a87e',
+  accentDim: 'rgba(0,168,126,0.14)',
+  blue: '#494fdf',
+  blueDim: 'rgba(73,79,223,0.14)',
+  text: '#ffffff',
+  muted: '#8d969e',
+  dim: '#505a63',
+  danger: '#e23b4a',
+  warning: '#ec7e00',
+
+  // Legacy aliases (keep for compatibility)
+  primary: '#0f1115',
+  primaryLight: '#181b21',
+  background: '#0f1115',
+  surface: '#181b21',
+  textSecondary: '#8d969e',
+  textLight: '#505a63',
+  error: '#e23b4a',
+  success: '#00a87e',
+  win: '#00a87e',
+  draw: '#ec7e00',
+  loss: '#e23b4a',
 };
 
 export const spacing = {
@@ -26,18 +38,18 @@ export const spacing = {
 };
 
 export const fontSize = {
-  xs: 12,
-  sm: 14,
-  md: 16,
-  lg: 18,
-  xl: 22,
-  xxl: 28,
-  title: 34,
+  xs: 10,
+  sm: 12,
+  md: 14,
+  lg: 16,
+  xl: 20,
+  xxl: 26,
+  title: 30,
 };
 
 export const borderRadius = {
-  sm: 6,
-  md: 12,
-  lg: 16,
+  sm: 9,
+  md: 14,
+  lg: 20,
   full: 9999,
 };

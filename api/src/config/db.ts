@@ -4,7 +4,16 @@ import { logger } from './logger';
 
 export async function connectDB(): Promise<void> {
   try {
-    await mongoose.connect(env.MONGODB_URI);
+    let uri = env.MONGODB_URI;
+
+    if (!uri) {
+      const { MongoMemoryServer } = await import('mongodb-memory-server');
+      const mongod = await MongoMemoryServer.create();
+      uri = mongod.getUri();
+      logger.info('Using in-memory MongoDB');
+    }
+
+    await mongoose.connect(uri);
     logger.info('Connected to MongoDB');
   } catch (error) {
     logger.error('MongoDB connection error:', error);

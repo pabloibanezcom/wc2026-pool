@@ -11,6 +11,11 @@ export async function loginWithGoogle(idToken: string): Promise<AuthResponse> {
   return data;
 }
 
+export async function loginDev(): Promise<AuthResponse> {
+  const { data } = await apiClient.post<AuthResponse>('/auth/dev');
+  return data;
+}
+
 export async function getMe(): Promise<User> {
   const { data } = await apiClient.get<{ user: User }>('/auth/me');
   return data.user;

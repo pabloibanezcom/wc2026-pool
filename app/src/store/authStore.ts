@@ -1,13 +1,14 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { User } from '../types';
-import { loginWithGoogle, getMe } from '../api/auth';
+import { loginWithGoogle, loginDev, getMe } from '../api/auth';
 
 interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
   signInWithGoogle: (idToken: string) => Promise<void>;
+  signInDev: () => Promise<void>;
   restoreSession: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -19,6 +20,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signInWithGoogle: async (idToken: string) => {
     const { token, user } = await loginWithGoogle(idToken);
+    await SecureStore.setItemAsync('token', token);
+    set({ user, token, isLoading: false });
+  },
+
+  signInDev: async () => {
+    const { token, user } = await loginDev();
     await SecureStore.setItemAsync('token', token);
     set({ user, token, isLoading: false });
   },

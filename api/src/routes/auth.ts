@@ -55,6 +55,30 @@ router.post('/google', async (req, res: Response): Promise<void> => {
   }
 });
 
+// Dev-only: mock login without Google
+if (env.NODE_ENV !== 'production') {
+  router.post('/dev', async (_req, res: Response): Promise<void> => {
+    const user = await User.findOneAndUpdate(
+      { googleId: 'dev-user-001' },
+      {
+        googleId: 'dev-user-001',
+        email: 'dev@wc2026.test',
+        name: 'Dev Player',
+        avatarUrl: '',
+      },
+      { upsert: true, new: true }
+    );
+
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email, avatarUrl: user.avatarUrl } });
+  });
+}
+
 router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   const user = await User.findById(req.userId).select('-__v');
   if (!user) {

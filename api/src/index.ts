@@ -40,7 +40,14 @@ app.use(errorHandler);
 
 async function start(): Promise<void> {
   await connectDB();
-  startSyncJobs();
+  if (env.FOOTBALL_DATA_API_KEY) {
+    startSyncJobs();
+  } else {
+    logger.info('No FOOTBALL_DATA_API_KEY — skipping sync jobs');
+    // Seed some sample matches for dev
+    const { seedDevMatches } = await import('./jobs/seedDev');
+    await seedDevMatches();
+  }
 
   app.listen(Number(env.PORT), () => {
     logger.info(`API server running on port ${env.PORT}`);

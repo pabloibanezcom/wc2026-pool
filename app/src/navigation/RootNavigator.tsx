@@ -9,57 +9,42 @@ import { colors } from '../theme';
 
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
-import MatchListScreen from '../screens/MatchListScreen';
-import MatchDetailScreen from '../screens/MatchDetailScreen';
-import LeaguesScreen from '../screens/LeaguesScreen';
-import CreateLeagueScreen from '../screens/CreateLeagueScreen';
-import JoinLeagueScreen from '../screens/JoinLeagueScreen';
-import LeagueDetailScreen from '../screens/LeagueDetailScreen';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
+import PicksScreen from '../screens/PicksScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function MatchesStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerTintColor: colors.primary }}>
-      <Stack.Screen name="MatchList" component={MatchListScreen} options={{ title: 'Matches' }} />
-      <Stack.Screen name="MatchDetail" component={MatchDetailScreen} options={{ title: 'Match' }} />
-    </Stack.Navigator>
-  );
-}
-
-function LeaguesStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerTintColor: colors.primary }}>
-      <Stack.Screen name="LeaguesList" component={LeaguesScreen} options={{ title: 'Leagues' }} />
-      <Stack.Screen name="CreateLeague" component={CreateLeagueScreen} options={{ title: 'Create League' }} />
-      <Stack.Screen name="JoinLeague" component={JoinLeagueScreen} options={{ title: 'Join League' }} />
-      <Stack.Screen name="LeagueDetail" component={LeagueDetailScreen} options={{ title: 'League' }} />
-    </Stack.Navigator>
-  );
-}
-
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: colors.bg,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 78,
+          paddingTop: 10,
+          paddingBottom: 16,
+        },
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.dim,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' as const },
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
           if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === 'Matches') iconName = focused ? 'football' : 'football-outline';
-          else if (route.name === 'Leagues') iconName = focused ? 'trophy' : 'trophy-outline';
+          else if (route.name === 'Table') iconName = focused ? 'trophy' : 'trophy-outline';
+          else if (route.name === 'Picks') iconName = focused ? 'football' : 'football-outline';
           else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={22} color={color} />;
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textLight,
-        headerShown: false,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Matches" component={MatchesStack} />
-      <Tab.Screen name="Leagues" component={LeaguesStack} />
+      <Tab.Screen name="Table" component={LeaderboardScreen} />
+      <Tab.Screen name="Picks" component={PicksScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -74,8 +59,8 @@ export default function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primary }}>
-        <ActivityIndicator size="large" color="#fff" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg }}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
