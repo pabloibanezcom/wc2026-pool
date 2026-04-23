@@ -53,7 +53,7 @@ export async function seedDevMatches(): Promise<void> {
       matches.push({
         externalId: externalId++,
         stage: 'GROUP' as const,
-        group: `Group ${groups[g]}`,
+        group: groups[g],
         matchday: md,
         homeTeam: groupTeams[h],
         awayTeam: groupTeams[a],

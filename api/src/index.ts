@@ -10,6 +10,7 @@ import authRoutes from './routes/auth';
 import matchRoutes from './routes/matches';
 import predictionRoutes from './routes/predictions';
 import leagueRoutes from './routes/leagues';
+import adminRoutes from './routes/admin';
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/auth', authRoutes);
 app.use('/matches', matchRoutes);
 app.use('/predictions', predictionRoutes);
 app.use('/leagues', leagueRoutes);
+app.use('/admin', adminRoutes);
 
 // Error handler
 app.use(errorHandler);
@@ -44,9 +46,13 @@ async function start(): Promise<void> {
     startSyncJobs();
   } else {
     logger.info('No FOOTBALL_DATA_API_KEY — skipping sync jobs');
-    // Seed some sample matches for dev
-    const { seedDevMatches } = await import('./jobs/seedDev');
-    await seedDevMatches();
+
+    if (env.USE_IN_MEMORY_DB || env.SEED_DEV_DATA) {
+      const { seedDevMatches } = await import('./jobs/seedDev');
+      await seedDevMatches();
+    } else {
+      logger.info('Skipping dev data seeding');
+    }
   }
 
   app.listen(Number(env.PORT), () => {

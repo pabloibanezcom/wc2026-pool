@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
+import { MatchStage, MatchStatus } from '../models/Match';
 
 const client = axios.create({
   baseURL: 'https://api.football-data.org/v4',
@@ -16,8 +17,8 @@ interface FootballDataMatch {
   stage: string;
   group: string | null;
   matchday: number;
-  homeTeam: { name: string; tla: string; crest: string };
-  awayTeam: { name: string; tla: string; crest: string };
+  homeTeam: { name: string | null; tla: string | null; crest: string | null };
+  awayTeam: { name: string | null; tla: string | null; crest: string | null };
   utcDate: string;
   status: string;
   score: {
@@ -26,12 +27,74 @@ interface FootballDataMatch {
   };
 }
 
+const STAGE_MAP: Record<string, MatchStage> = {
+  GROUP_STAGE: 'GROUP',
+  LAST_32: 'ROUND_OF_32',
+  LAST_16: 'ROUND_OF_16',
+  QUARTER_FINALS: 'QUARTER_FINAL',
+  SEMI_FINALS: 'SEMI_FINAL',
+  THIRD_PLACE: 'THIRD_PLACE',
+  FINAL: 'FINAL',
+};
+
+const STATUS_MAP: Record<string, MatchStatus> = {
+  SCHEDULED: 'SCHEDULED',
+  TIMED: 'SCHEDULED',
+  IN_PLAY: 'LIVE',
+  PAUSED: 'LIVE',
+  FINISHED: 'FINISHED',
+  SUSPENDED: 'POSTPONED',
+  POSTPONED: 'POSTPONED',
+  CANCELLED: 'POSTPONED',
+  AWARDED: 'FINISHED',
+};
+
+function mapStage(stage: string): MatchStage {
+  const mapped = STAGE_MAP[stage];
+  if (!mapped) {
+    throw new Error(`Unsupported football-data stage: ${stage}`);
+  }
+
+  return mapped;
+}
+
+function mapStatus(status: string): MatchStatus {
+  const mapped = STATUS_MAP[status];
+  if (!mapped) {
+    throw new Error(`Unsupported football-data status: ${status}`);
+  }
+
+  return mapped;
+}
+
+function mapGroup(group: string | null): string | null {
+  if (!group) return null;
+  if (group.startsWith('GROUP_')) return group.replace('GROUP_', '');
+  return group;
+}
+
+function mapTeamName(name: string | null): string {
+  return name?.trim() || 'TBD';
+}
+
+function mapTeamCode(team: { name: string | null; tla: string | null }): string {
+  if (team.tla) return team.tla;
+  if (!team.name) return 'TBD';
+
+  return team.name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 3)
+    .toUpperCase();
+}
+
 export async function fetchAllMatches(): Promise<FootballDataMatch[]> {
   try {
     const response = await client.get(`/competitions/${COMPETITION_CODE}/matches`);
     return response.data.matches;
   } catch (error) {
-    logger.error('Failed to fetch matches from football-data.org', error);
+    logger.error({ err: error }, 'Failed to fetch matches from football-data.org');
     throw error;
   }
 }
@@ -43,12 +106,14 @@ export async function fetchFinishedMatches(dateFrom: string, dateTo: string): Pr
     });
     return response.data.matches;
   } catch (error) {
-    logger.error('Failed to fetch finished matches', error);
+    logger.error({ err: error }, 'Failed to fetch finished matches');
     throw error;
   }
 }
 
 export function mapExternalMatch(ext: FootballDataMatch) {
+  const stage = mapStage(ext.stage);
+  const status = mapStatus(ext.status);
   const winner =
     ext.score.fullTime.home != null && ext.score.fullTime.away != null
       ? ext.score.fullTime.home > ext.score.fullTime.away
@@ -60,15 +125,15 @@ export function mapExternalMatch(ext: FootballDataMatch) {
 
   return {
     externalId: ext.id,
-    stage: ext.stage,
-    group: ext.group,
+    stage,
+    group: mapGroup(ext.group),
     matchday: ext.matchday,
-    homeTeam: { name: ext.homeTeam.name, code: ext.homeTeam.tla, crest: ext.homeTeam.crest },
-    awayTeam: { name: ext.awayTeam.name, code: ext.awayTeam.tla, crest: ext.awayTeam.crest },
+    homeTeam: { name: mapTeamName(ext.homeTeam.name), code: mapTeamCode(ext.homeTeam), crest: ext.homeTeam.crest || '' },
+    awayTeam: { name: mapTeamName(ext.awayTeam.name), code: mapTeamCode(ext.awayTeam), crest: ext.awayTeam.crest || '' },
     utcDate: new Date(ext.utcDate),
-    status: ext.status,
+    status,
     result:
-      ext.status === 'FINISHED' && ext.score.fullTime.home != null
+      status === 'FINISHED' && ext.score.fullTime.home != null
         ? {
             homeGoals: ext.score.fullTime.home!,
             awayGoals: ext.score.fullTime.away!,

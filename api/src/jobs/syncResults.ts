@@ -9,7 +9,7 @@ export function startSyncJobs(): void {
       await syncAllFixtures();
       await processFinishedMatches();
     } catch (error) {
-      logger.error('Sync job failed:', error);
+      logger.error({ err: error }, 'Sync job failed');
     }
   });
 
@@ -18,7 +18,7 @@ export function startSyncJobs(): void {
     try {
       await syncAllFixtures();
     } catch (error) {
-      logger.error('Daily sync failed:', error);
+      logger.error({ err: error }, 'Daily sync failed');
     }
   });
 

@@ -6,7 +6,7 @@ import { calculatePoints } from './scoring';
 import { logger } from '../config/logger';
 import { MatchStage } from '../models/Match';
 
-export async function syncAllFixtures(): Promise<void> {
+export async function syncAllFixtures(): Promise<{ fixturesSynced: number }> {
   logger.info('Syncing all fixtures...');
   const externalMatches = await fetchAllMatches();
 
@@ -16,10 +16,17 @@ export async function syncAllFixtures(): Promise<void> {
   }
 
   logger.info(`Synced ${externalMatches.length} fixtures`);
+  return { fixturesSynced: externalMatches.length };
 }
 
-export async function processFinishedMatches(): Promise<void> {
+export async function processFinishedMatches(): Promise<{
+  matchesProcessed: number;
+  predictionsScored: number;
+  leaguesUpdated: number;
+}> {
   const unprocessed = await Match.find({ status: 'FINISHED', scoresProcessed: false });
+  let matchesProcessed = 0;
+  let predictionsScored = 0;
 
   for (const match of unprocessed) {
     if (!match.result) continue;
@@ -39,6 +46,8 @@ export async function processFinishedMatches(): Promise<void> {
       await prediction.save();
     }
 
+    predictionsScored += predictions.length;
+    matchesProcessed += 1;
     match.scoresProcessed = true;
     await match.save();
 
@@ -46,10 +55,12 @@ export async function processFinishedMatches(): Promise<void> {
   }
 
   // Update league leaderboards
-  await updateLeaguePoints();
+  const leaguesUpdated = await updateLeaguePoints();
+
+  return { matchesProcessed, predictionsScored, leaguesUpdated };
 }
 
-async function updateLeaguePoints(): Promise<void> {
+async function updateLeaguePoints(): Promise<number> {
   const leagues = await League.find();
 
   for (const league of leagues) {
@@ -62,4 +73,6 @@ async function updateLeaguePoints(): Promise<void> {
     }
     await league.save();
   }
+
+  return leagues.length;
 }

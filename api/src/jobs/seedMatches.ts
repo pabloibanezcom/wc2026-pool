@@ -11,6 +11,6 @@ async function seed(): Promise<void> {
 }
 
 seed().catch((err) => {
-  logger.error('Seed failed:', err);
+  logger.error({ err }, 'Seed failed');
   process.exit(1);
 });

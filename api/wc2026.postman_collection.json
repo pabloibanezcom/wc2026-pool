@@ -23,6 +23,11 @@
       "key": "leagueId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "syncApiKey",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -218,6 +223,26 @@
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": { "raw": "{{baseUrl}}/leagues/{{leagueId}}/leave", "host": ["{{baseUrl}}"], "path": ["leagues", "{{leagueId}}", "leave"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Manual Sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "x-sync-api-key", "value": "{{syncApiKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/admin/sync", "host": ["{{baseUrl}}"], "path": ["admin", "sync"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"syncFixtures\": true,\n  \"processResults\": true\n}"
+            }
           }
         }
       ]
