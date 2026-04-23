@@ -9,6 +9,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '../store/authStore';
@@ -49,7 +50,8 @@ export default function LoginScreen() {
   };
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+    <SafeAreaView style={styles.container}>
+    <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
       {/* Decorative glow */}
       <View style={styles.glowTop} pointerEvents="none" />
       <View style={styles.glowBottom} pointerEvents="none" />
@@ -140,6 +142,7 @@ export default function LoginScreen() {
         <View style={styles.spacerBottom} />
       </ScrollView>
     </Animated.View>
+    </SafeAreaView>
   );
 }
 
@@ -196,6 +199,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  innerContainer: {
+    flex: 1,
   },
   glowTop: {
     position: 'absolute',

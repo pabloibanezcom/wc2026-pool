@@ -1,3 +1,10 @@
+export const fonts = {
+  body: 'FIFASans-Regular',
+  bodyMedium: 'FIFASans-Medium',
+  display: 'FWC26-NormalMedium',
+  displayBold: 'FWC26-NormalMedium',
+};
+
 export const colors = {
   bg: '#0f1115',
   card: '#181b21',

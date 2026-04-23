@@ -7,13 +7,14 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchMatches } from '../api/matches';
 import { fetchMyPredictions, submitPrediction } from '../api/predictions';
 import { Match, Prediction } from '../types';
 import PredictionSheet from '../components/PredictionSheet';
 import Flag from '../components/ui/Flag';
 import Badge from '../components/ui/Badge';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 function getResult(pred: Prediction, match: Match): 'exact' | 'correct' | 'wrong' | null {
   if (!match.result) return null;
@@ -72,7 +73,7 @@ export default function PicksScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -191,7 +192,7 @@ export default function PicksScreen() {
         onSave={handleSave}
         onClose={() => setSelectedMatch(null)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -200,8 +201,8 @@ const styles = StyleSheet.create({
   scroll: { padding: 18, paddingBottom: 32, gap: 16 },
 
   titleRow: { marginTop: 4 },
-  title: { color: colors.text, fontSize: 26, fontWeight: '700' },
-  subtitle: { color: colors.muted, fontSize: 13, marginTop: 2 },
+  title: { color: colors.text, fontSize: 30, fontFamily: fonts.display },
+  subtitle: { color: colors.muted, fontSize: 13, marginTop: 2, fontFamily: fonts.body },
 
   tabBar: {
     flexDirection: 'row',
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabActive: { backgroundColor: colors.accent },
-  tabText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
+  tabText: { color: colors.muted, fontSize: 13, fontWeight: '600', fontFamily: fonts.bodyMedium },
   tabTextActive: { color: '#fff' },
 
   matchCard: {
@@ -229,16 +230,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   matchHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  matchMeta: { color: colors.dim, fontSize: 10 },
+  matchMeta: { color: colors.dim, fontSize: 10, fontFamily: fonts.body },
   predictLink: { color: colors.accent, fontSize: 11, fontWeight: '600' },
   editLink: { color: colors.accent, fontSize: 11, fontWeight: '500' },
 
   matchRow: { flexDirection: 'row', alignItems: 'center' },
   teamSide: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7 },
   teamSideRight: { justifyContent: 'flex-end' },
-  teamName: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  teamName: { color: colors.text, fontSize: 15, fontFamily: fonts.displayBold },
   scoreCenter: { alignItems: 'center', minWidth: 76, paddingHorizontal: 8 },
-  scoreResult: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  scoreResult: { color: colors.text, fontSize: 18, fontWeight: '700', fontFamily: fonts.bodyMedium },
   predScore: { fontSize: 11, marginTop: 2 },
   vsText: { color: colors.dim, fontSize: 14 },
 

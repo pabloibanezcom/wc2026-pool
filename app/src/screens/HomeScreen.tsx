@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { fetchMatches } from '../api/matches';
 import { fetchMyPredictions } from '../api/predictions';
@@ -16,7 +17,7 @@ import PredictionSheet from '../components/PredictionSheet';
 import Flag from '../components/ui/Flag';
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 import { submitPrediction } from '../api/predictions';
 
 function SectionLabel({ children }: { children: string }) {
@@ -127,7 +128,7 @@ export default function HomeScreen() {
   const firstName = user?.name?.split(' ')[0] || 'Fan';
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -298,7 +299,7 @@ export default function HomeScreen() {
         onSave={handleSave}
         onClose={() => setSelectedMatch(null)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -307,8 +308,8 @@ const styles = StyleSheet.create({
   scroll: { padding: 18, paddingBottom: 32, gap: 18 },
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 },
-  greeting: { color: colors.muted, fontSize: 12, marginBottom: 3 },
-  poolName: { color: colors.text, fontSize: 22, fontWeight: '700' },
+  greeting: { color: colors.muted, fontSize: 12, marginBottom: 3, fontFamily: fonts.body },
+  poolName: { color: colors.text, fontSize: 26, fontFamily: fonts.display },
   bellBtn: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
@@ -321,28 +322,28 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
     padding: 12, alignItems: 'center',
   },
-  statValue: { fontSize: 17, fontWeight: '700' },
-  statLabel: { color: colors.dim, fontSize: 9, marginTop: 2 },
+  statValue: { fontSize: 17, fontWeight: '700', fontFamily: fonts.bodyMedium },
+  statLabel: { color: colors.dim, fontSize: 9, marginTop: 2, fontFamily: fonts.body },
 
   sectionLabel: {
     fontSize: 11, fontWeight: '600', color: colors.dim,
-    letterSpacing: 1.2, marginBottom: 8,
+    letterSpacing: 1.2, marginBottom: 8, fontFamily: fonts.bodyMedium,
   },
 
   nextMatchCard: {
     borderRadius: 20, borderWidth: 1, padding: 16,
   },
   nextMatchHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  matchMeta: { color: colors.muted, fontSize: 11 },
-  predictedBadge: { color: colors.accent, fontSize: 11, fontWeight: '600' },
+  matchMeta: { color: colors.muted, fontSize: 11, fontFamily: fonts.body },
+  predictedBadge: { color: colors.accent, fontSize: 11, fontWeight: '600', fontFamily: fonts.bodyMedium },
   predictBtn: { backgroundColor: colors.accent, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 9999 },
   predictBtnText: { color: '#fff', fontSize: 11, fontWeight: '600' },
 
   matchRow: { flexDirection: 'row', alignItems: 'center' },
   teamSide: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   teamSideRight: { justifyContent: 'flex-end' },
-  teamName: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  teamNameSm: { color: colors.text, fontSize: 13, fontWeight: '500' },
+  teamName: { color: colors.text, fontSize: 16, fontFamily: fonts.displayBold },
+  teamNameSm: { color: colors.text, fontSize: 14, fontFamily: fonts.displayBold },
   scoreCenter: { alignItems: 'center', paddingHorizontal: 10, minWidth: 70 },
   scoreLarge: { color: colors.text, fontSize: 22, fontWeight: '700' },
   vsText: { color: colors.dim, fontSize: 14 },
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
   leaderRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   leaderRowMe: { backgroundColor: 'rgba(73,79,223,0.05)' },
   medal: { width: 22, textAlign: 'center', fontSize: 16 },
-  leaderName: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  leaderName: { color: colors.text, fontSize: 14, fontWeight: '600', fontFamily: fonts.bodyMedium },
   youBadge: { backgroundColor: colors.blueDim, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 9999 },
   youText: { color: colors.blue, fontSize: 10 },
   leaderPts: { color: colors.accent, fontSize: 16, fontWeight: '700' },

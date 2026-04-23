@@ -8,12 +8,13 @@ import {
   Image,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { fetchMyLeagues } from '../api/leagues';
 import { fetchMyPredictions } from '../api/predictions';
 import { League, Prediction } from '../types';
 import Avatar from '../components/ui/Avatar';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children.toUpperCase()}</Text>;
@@ -90,7 +91,7 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
@@ -149,7 +150,7 @@ export default function ProfileScreen() {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -160,8 +161,8 @@ const styles = StyleSheet.create({
   avatarSection: { alignItems: 'center', gap: 12, paddingTop: 14 },
   avatarImg: { width: 76, height: 76, borderRadius: 38 },
   nameBlock: { alignItems: 'center' },
-  name: { color: colors.text, fontSize: 22, fontWeight: '700' },
-  email: { color: colors.muted, fontSize: 12, marginTop: 2 },
+  name: { color: colors.text, fontSize: 26, fontFamily: fonts.display },
+  email: { color: colors.muted, fontSize: 12, marginTop: 2, fontFamily: fonts.body },
   tags: { flexDirection: 'row', gap: 8 },
   tag: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 9999 },
   tagText: { fontSize: 10, fontWeight: '600' },
@@ -172,11 +173,11 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
     padding: 14, alignItems: 'center',
   },
-  statValue: { fontSize: 20, fontWeight: '700' },
-  statLabel: { color: colors.dim, fontSize: 10, marginTop: 2 },
+  statValue: { fontSize: 20, fontWeight: '700', fontFamily: fonts.bodyMedium },
+  statLabel: { color: colors.dim, fontSize: 10, marginTop: 2, fontFamily: fonts.body },
 
   sectionLabel: {
-    fontSize: 11, fontWeight: '600', color: colors.dim, letterSpacing: 1.2, marginBottom: 8,
+    fontSize: 11, fontWeight: '600', color: colors.dim, letterSpacing: 1.2, marginBottom: 8, fontFamily: fonts.bodyMedium,
   },
 
   card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
@@ -185,7 +186,7 @@ const styles = StyleSheet.create({
     padding: 14, paddingHorizontal: 16,
   },
   settingsRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  settingsLabel: { color: colors.text, fontSize: 14 },
+  settingsLabel: { color: colors.text, fontSize: 14, fontFamily: fonts.body },
   settingsRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   settingsValue: { color: colors.muted, fontSize: 13 },
   chevron: { color: colors.dim, fontSize: 18 },

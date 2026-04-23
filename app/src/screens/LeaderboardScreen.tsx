@@ -6,11 +6,12 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { fetchMyLeagues } from '../api/leagues';
 import { League, LeagueMember } from '../types';
 import Avatar from '../components/ui/Avatar';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 const MEMBER_COLORS = ['#494fdf', '#00a87e', '#e61e49', '#ec7e00', '#936d62'];
 
@@ -47,7 +48,7 @@ export default function LeaderboardScreen() {
   const top3 = members.slice(0, 3);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -154,7 +155,7 @@ export default function LeaderboardScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -193,11 +194,11 @@ const styles = StyleSheet.create({
   scroll: { padding: 18, paddingBottom: 32, gap: 18 },
 
   titleRow: { marginTop: 4 },
-  title: { color: colors.text, fontSize: 26, fontWeight: '700' },
-  subtitle: { color: colors.muted, fontSize: 13, marginTop: 2 },
+  title: { color: colors.text, fontSize: 30, fontFamily: fonts.display },
+  subtitle: { color: colors.muted, fontSize: 13, marginTop: 2, fontFamily: fonts.body },
 
   sectionLabel: {
-    fontSize: 11, fontWeight: '600', color: colors.dim, letterSpacing: 1.2, marginBottom: 8,
+    fontSize: 11, fontWeight: '600', color: colors.dim, letterSpacing: 1.2, marginBottom: 8, fontFamily: fonts.bodyMedium,
   },
 
   podium: {
@@ -215,8 +216,8 @@ const styles = StyleSheet.create({
   podiumSlot: { flex: 1, alignItems: 'center', gap: 6 },
   podiumSlotElevated: { marginBottom: 14 },
   crown: { fontSize: 18, marginBottom: 2 },
-  podiumName: { color: colors.text, fontSize: 12, fontWeight: '600' },
-  podiumNameLarge: { fontSize: 14, fontWeight: '700' },
+  podiumName: { color: colors.text, fontSize: 13, fontFamily: fonts.displayBold },
+  podiumNameLarge: { fontSize: 15, fontFamily: fonts.displayBold },
   podiumBadge: {
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 9,
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
   medal: { fontSize: 16 },
   rankNum: { color: colors.dim, fontSize: 13, fontWeight: '700' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  memberName: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  memberName: { color: colors.text, fontSize: 14, fontWeight: '600', fontFamily: fonts.bodyMedium },
   youBadge: { backgroundColor: colors.blueDim, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 9999 },
   youText: { color: colors.blue, fontSize: 10 },
   memberSub: { color: colors.dim, fontSize: 10, marginTop: 1 },
