@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Match } from '../models/Match';
 import { Prediction } from '../models/Prediction';
+import { League } from '../models/League';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { MatchWinner } from '../models/Match';
 
@@ -96,7 +97,6 @@ router.get('/match/:matchId', authMiddleware, async (req: AuthRequest, res: Resp
   const filter: Record<string, unknown> = { matchId: match._id };
 
   if (leagueId) {
-    const { League } = await import('../models/League');
     const league = await League.findById(leagueId);
     if (league) {
       const memberIds = league.members.map((m) => m.userId);
