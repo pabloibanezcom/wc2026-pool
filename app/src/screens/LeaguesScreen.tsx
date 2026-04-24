@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   secondaryButton: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary },
   actionText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
   secondaryText: { color: colors.primary },
-  list: { padding: spacing.md },
+  list: { padding: spacing.md, paddingBottom: spacing.md },
   leagueCard: {
     backgroundColor: colors.surface,
     padding: spacing.lg,

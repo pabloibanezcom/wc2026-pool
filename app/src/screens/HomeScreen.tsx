@@ -43,7 +43,7 @@ export default function HomeScreen() {
   const user = useAuthStore((s) => s.user);
   const [matches, setMatches] = useState<Match[]>([]);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
-  const [league, setLeague] = useState<League | null>(null);
+  const [leagues, setLeagues] = useState<League[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -58,7 +58,7 @@ export default function HomeScreen() {
       ]);
       setMatches(m);
       setPredictions(p);
-      if (leagues.length > 0) setLeague(leagues[0]);
+      setLeagues(leagues);
     } catch {
       // silently fail
     }
@@ -94,32 +94,7 @@ export default function HomeScreen() {
   const recentFinished = [...finished].reverse().slice(0, 4);
 
   const totalPoints = predictions.reduce((acc, p) => acc + (p.points ?? 0), 0);
-  const exactCount = predictions.filter((p) => {
-    const m = matches.find((x) => x._id === p.matchId);
-    return m && getResult(p, m) === 'exact';
-  }).length;
-
-  const myRank = league
-    ? (() => {
-        const sorted = [...league.members].sort((a, b) => b.totalPoints - a.totalPoints);
-        const idx = sorted.findIndex((m) => (m.userId as any)?.id === user?.id || (m.userId as any)?._id === user?.id);
-        return idx >= 0 ? idx + 1 : '—';
-      })()
-    : '—';
-
-  const accuracy =
-    finished.length > 0
-      ? Math.round((predictions.filter((p) => {
-          const m = matches.find((x) => x._id === p.matchId);
-          return m && getResult(p, m) !== 'wrong' && getResult(p, m) !== null;
-        }).length / finished.length) * 100)
-      : 0;
-
-  const leaderboardMembers = league
-    ? [...league.members].sort((a, b) => b.totalPoints - a.totalPoints).slice(0, 3)
-    : [];
-
-  const memberColors = ['#494fdf', '#00a87e', '#e61e49', '#ec7e00'];
+  const homeLeagues = leagues.slice(0, 2);
 
   const handleSave = async (matchId: string, score: [number, number]) => {
     try {
@@ -138,7 +113,7 @@ export default function HomeScreen() {
   const firstName = user?.name?.split(' ')[0] || 'Fan';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -147,27 +122,12 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>{greeting}, {firstName}</Text>
-            <Text style={styles.poolName}>{league?.name ?? 'World Cup Pool'} 🏆</Text>
-          </View>
-          <View style={styles.bellBtn}>
-            <Text style={{ fontSize: 18 }}>🔔</Text>
-          </View>
-        </View>
-
-        {/* Stats row */}
-        <View style={styles.statsRow}>
-          {[
-            { label: 'Rank', value: `#${myRank}`, color: colors.accent },
-            { label: 'Points', value: `${totalPoints}`, color: colors.text },
-            { label: 'Played', value: `${finished.length}/${matches.length}`, color: colors.text },
-            { label: 'Accuracy', value: `${accuracy}%`, color: colors.text },
-          ].map(({ label, value, color }) => (
-            <View key={label} style={styles.statCard}>
-              <Text style={[styles.statValue, { color }]}>{value}</Text>
-              <Text style={styles.statLabel}>{label}</Text>
+            <Text style={styles.greeting}>{greeting},</Text>
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.userName}>{firstName}</Text>
+              <Text style={styles.pointsSummary}>{totalPoints} points</Text>
             </View>
-          ))}
+          </View>
         </View>
 
         {/* Next matches */}
@@ -191,32 +151,31 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Mini leaderboard */}
-        {leaderboardMembers.length > 0 && (
+        {/* Leagues */}
+        {homeLeagues.length > 0 && (
           <View>
-            <SectionLabel>Leaderboard</SectionLabel>
+            <SectionLabel>Leagues</SectionLabel>
             <View style={styles.card}>
-              {leaderboardMembers.map((member, i) => {
-                const memberUser = member.userId as any;
-                const name = memberUser?.name || 'Player';
-                const isMe = memberUser?.id === user?.id || memberUser?._id === user?.id;
+              {homeLeagues.map((league, index) => {
+                const sortedMembers = [...league.members].sort((a, b) => b.totalPoints - a.totalPoints);
+                const rank = sortedMembers.findIndex((member) => {
+                  const memberUser = member.userId as any;
+                  return memberUser?.id === user?.id || memberUser?._id === user?.id;
+                });
+
                 return (
                   <View
-                    key={i}
+                    key={league._id}
                     style={[
-                      styles.leaderRow,
-                      i < leaderboardMembers.length - 1 && styles.leaderRowBorder,
-                      isMe && styles.leaderRowMe,
+                      styles.leagueRow,
+                      index < homeLeagues.length - 1 && styles.leagueRowBorder,
                     ]}
                   >
-                    <Text style={styles.medal}>{['🥇', '🥈', '🥉'][i]}</Text>
-                    <Avatar name={name} color={memberColors[i % memberColors.length]} size={32} />
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={styles.leaderName}>{name}</Text>
-                      {isMe && <View style={styles.youBadge}><Text style={styles.youText}>You</Text></View>}
+                    <View style={styles.leagueInfo}>
+                      <Text style={styles.leagueName}>{league.name}</Text>
                     </View>
-                    <Text style={styles.leaderPts}>
-                      {member.totalPoints}<Text style={styles.leaderPtsSuffix}> pts</Text>
+                    <Text style={styles.leagueRank}>
+                      {rank >= 0 ? rank + 1 : '—'}/{league.members.length}
                     </Text>
                   </View>
                 );
@@ -290,25 +249,13 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: 18, paddingBottom: 32, gap: 18 },
+  scroll: { padding: 18, paddingBottom: 16, gap: 18 },
 
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 },
-  greeting: { color: colors.muted, fontSize: 12, marginBottom: 3, fontFamily: fonts.body },
-  poolName: { color: colors.text, fontSize: 26, fontFamily: fonts.display },
-  bellBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  statsRow: { flexDirection: 'row', gap: 8 },
-  statCard: {
-    flex: 1, backgroundColor: colors.card, borderRadius: 14,
-    borderWidth: 1, borderColor: colors.border,
-    padding: 12, alignItems: 'center',
-  },
-  statValue: { fontSize: 17, fontWeight: '700', fontFamily: fonts.bodyMedium },
-  statLabel: { color: colors.dim, fontSize: 9, marginTop: 2, fontFamily: fonts.body },
+  header: { marginTop: 4 },
+  greeting: { color: colors.muted, fontSize: 13, marginBottom: 4, fontFamily: fonts.body },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
+  userName: { color: colors.text, fontSize: 34, fontFamily: fonts.display, lineHeight: 38 },
+  pointsSummary: { color: colors.accent, fontSize: 24, fontFamily: fonts.display, lineHeight: 28 },
 
   sectionLabel: {
     fontSize: 11, fontWeight: '600', color: colors.dim,
@@ -324,15 +271,11 @@ const styles = StyleSheet.create({
   scoreCenter: { alignItems: 'center', paddingHorizontal: 10, minWidth: 70 },
 
   card: { backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
-  leaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 13, paddingHorizontal: 16 },
-  leaderRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  leaderRowMe: { backgroundColor: 'rgba(73,79,223,0.05)' },
-  medal: { width: 22, textAlign: 'center', fontSize: 16 },
-  leaderName: { color: colors.text, fontSize: 14, fontWeight: '600', fontFamily: fonts.bodyMedium },
-  youBadge: { backgroundColor: colors.blueDim, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 9999 },
-  youText: { color: colors.blue, fontSize: 10 },
-  leaderPts: { color: colors.accent, fontSize: 16, fontWeight: '700' },
-  leaderPtsSuffix: { color: colors.muted, fontSize: 10, fontWeight: '400' },
+  leagueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, paddingHorizontal: 16 },
+  leagueRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  leagueInfo: { flex: 1, paddingRight: 12 },
+  leagueName: { color: colors.text, fontSize: 15, fontFamily: fonts.bodyMedium },
+  leagueRank: { color: colors.accent, fontSize: 16, fontFamily: fonts.displayBold },
 
   resultCard: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 12, paddingHorizontal: 16 },
   resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },

@@ -48,7 +48,7 @@ export default function LeaderboardScreen() {
   const top3 = members.slice(0, 3);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -191,7 +191,7 @@ function PodiumSlot({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: 18, paddingBottom: 32, gap: 18 },
+  scroll: { padding: 18, paddingBottom: 16, gap: 18 },
 
   titleRow: { marginTop: 4 },
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.display },

@@ -65,7 +65,7 @@ export default function PicksScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -139,7 +139,7 @@ export default function PicksScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: 18, paddingBottom: 32, gap: 16 },
+  scroll: { padding: 18, paddingBottom: 16, gap: 16 },
 
   titleRow: { marginTop: 4 },
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.display },

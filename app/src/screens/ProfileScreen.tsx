@@ -65,14 +65,6 @@ export default function ProfileScreen() {
 
   const sections = [
     {
-      title: 'Pool',
-      items: [
-        { label: 'Pool Name', value: league?.name ?? '—' },
-        { label: 'Players', value: league ? `${league.members.length} friends` : '—' },
-        { label: 'Invite Code', value: league?.inviteCode ?? '—' },
-      ],
-    },
-    {
       title: 'Notifications',
       items: [
         { label: 'Match reminders', value: 'On' },
@@ -84,14 +76,13 @@ export default function ProfileScreen() {
       title: 'Account',
       items: [
         { label: 'Edit profile', value: '' },
-        { label: 'Help & Support', value: '' },
         { label: 'Sign out', value: '', danger: true, onPress: handleSignOut },
       ],
     },
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
@@ -156,7 +147,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: 18, paddingBottom: 40, gap: 18 },
+  scroll: { padding: 18, paddingBottom: 16, gap: 18 },
 
   avatarSection: { alignItems: 'center', gap: 12, paddingTop: 14 },
   avatarImg: { width: 76, height: 76, borderRadius: 38 },
