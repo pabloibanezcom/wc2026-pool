@@ -9,6 +9,7 @@ const tags = [
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
   '<link rel="manifest" href="/manifest.json" />',
   '<link rel="apple-touch-icon" href="/icon-192.png" />',
+  '<style>html,body{background-color:#0f1115}</style>',
 ].join('\n  ');
 
 html = html.replace('</head>', `  ${tags}\n</head>`);
