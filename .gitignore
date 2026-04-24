@@ -31,3 +31,6 @@ yarn-error.log*
 
 # Coverage
 coverage/
+
+# Vercel
+.vercel

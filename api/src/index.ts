@@ -1,47 +1,12 @@
-import express from 'express';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import { app } from './app';
 import { connectDB } from './config/db';
 import { env } from './config/env';
 import { logger } from './config/logger';
-import { errorHandler } from './middleware/errorHandler';
 import { startSyncJobs } from './jobs/syncResults';
-import authRoutes from './routes/auth';
-import matchRoutes from './routes/matches';
-import predictionRoutes from './routes/predictions';
-import leagueRoutes from './routes/leagues';
-import adminRoutes from './routes/admin';
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
-
-// Health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Routes
-app.use('/auth', authRoutes);
-app.use('/matches', matchRoutes);
-app.use('/predictions', predictionRoutes);
-app.use('/leagues', leagueRoutes);
-app.use('/admin', adminRoutes);
-
-// Error handler
-app.use(errorHandler);
 
 async function start(): Promise<void> {
   await connectDB();
+
   if (env.FOOTBALL_DATA_API_KEY) {
     startSyncJobs();
   } else {
