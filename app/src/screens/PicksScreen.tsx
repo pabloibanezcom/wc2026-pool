@@ -13,6 +13,7 @@ import { fetchMyPredictions, submitPrediction } from '../api/predictions';
 import { Match, Prediction } from '../types';
 import PredictionSheet from '../components/PredictionSheet';
 import MatchCard from '../components/MatchCard';
+import LoadingView from '../components/ui/LoadingView';
 import { colors, fonts } from '../theme';
 
 function getResult(pred: Prediction, match: Match): 'exact' | 'correct' | 'wrong' | null {
@@ -30,6 +31,7 @@ export default function PicksScreen() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const predMap = Object.fromEntries(predictions.map((p) => [p.matchId, p]));
 
@@ -40,6 +42,8 @@ export default function PicksScreen() {
       setPredictions(p);
     } catch {
       // silently fail
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,6 +67,14 @@ export default function PicksScreen() {
       // silently fail
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <LoadingView />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

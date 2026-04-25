@@ -17,6 +17,7 @@ import MatchCard from '../components/MatchCard';
 import Flag from '../components/ui/Flag';
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
+import LoadingView from '../components/ui/LoadingView';
 import { colors, fonts } from '../theme';
 import { submitPrediction } from '../api/predictions';
 
@@ -46,6 +47,7 @@ export default function HomeScreen() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const predMap = Object.fromEntries(predictions.map((p) => [p.matchId, p]));
 
@@ -61,6 +63,8 @@ export default function HomeScreen() {
       setLeagues(leagues);
     } catch {
       // silently fail
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,6 +115,14 @@ export default function HomeScreen() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const firstName = user?.name?.split(' ')[0] || 'Fan';
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <LoadingView />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

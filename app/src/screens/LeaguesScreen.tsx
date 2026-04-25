@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } fr
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { fetchMyLeagues } from '../api/leagues';
 import { League } from '../types';
+import LoadingView from '../components/ui/LoadingView';
 import { colors, spacing, fontSize, borderRadius } from '../theme';
 
 export default function LeaguesScreen() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigation = useNavigation<any>();
 
   const loadLeagues = async () => {
@@ -16,6 +18,8 @@ export default function LeaguesScreen() {
       setLeagues(data);
     } catch {
       // handle error
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,27 +49,31 @@ export default function LeaguesScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={leagues}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.leagueCard}
-            onPress={() => navigation.navigate('LeagueDetail', { leagueId: item._id })}
-          >
-            <Text style={styles.leagueName}>{item.name}</Text>
-            <Text style={styles.leagueInfo}>{item.members.length} members</Text>
-          </TouchableOpacity>
-        )}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No leagues yet.</Text>
-            <Text style={styles.emptySubtext}>Create or join a league to compete with friends!</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <LoadingView />
+      ) : (
+        <FlatList
+          data={leagues}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.leagueCard}
+              onPress={() => navigation.navigate('LeagueDetail', { leagueId: item._id })}
+            >
+              <Text style={styles.leagueName}>{item.name}</Text>
+              <Text style={styles.leagueInfo}>{item.members.length} members</Text>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>No leagues yet.</Text>
+              <Text style={styles.emptySubtext}>Create or join a league to compete with friends!</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }

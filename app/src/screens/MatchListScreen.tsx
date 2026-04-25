@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { fetchMatches } from '../api/matches';
 import { Match, MatchStage } from '../types';
 import MatchCard from '../components/MatchCard';
+import LoadingView from '../components/ui/LoadingView';
 import { colors, spacing, fontSize, borderRadius } from '../theme';
 
 const STAGES: { label: string; value: MatchStage }[] = [
@@ -19,6 +20,7 @@ export default function MatchListScreen() {
   const [activeStage, setActiveStage] = useState<MatchStage>('GROUP');
   const [matches, setMatches] = useState<Match[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigation = useNavigation<any>();
 
   const loadMatches = async () => {
@@ -27,10 +29,13 @@ export default function MatchListScreen() {
       setMatches(data);
     } catch {
       // handle error
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
+    setLoading(true);
     loadMatches();
   }, [activeStage]);
 
@@ -54,20 +59,24 @@ export default function MatchListScreen() {
         ))}
       </View>
 
-      <FlatList
-        data={matches}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <MatchCard match={item} onPress={() => navigation.navigate('MatchDetail', { matchId: item._id })} />
-        )}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No matches for this stage yet.</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <LoadingView />
+      ) : (
+        <FlatList
+          data={matches}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => (
+            <MatchCard match={item} onPress={() => navigation.navigate('MatchDetail', { matchId: item._id })} />
+          )}
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>No matches for this stage yet.</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
