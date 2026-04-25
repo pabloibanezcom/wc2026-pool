@@ -14,7 +14,7 @@ import { fetchMyPredictions } from '../api/predictions';
 import { fetchMyLeagues } from '../api/leagues';
 import { Match, Prediction, League } from '../types';
 import PredictionSheet from '../components/PredictionSheet';
-import MatchCard from '../components/MatchCard';
+import MatchCard, { hasTbdTeam } from '../components/MatchCard';
 import LeagueCard from '../components/LeagueCard';
 import Flag from '../components/ui/Flag';
 import Avatar from '../components/ui/Avatar';
@@ -152,13 +152,14 @@ export default function HomeScreen() {
             <View style={styles.nextMatchesList}>
               {nextMatches.map((match) => {
                 const myPred = predMap[match._id] ?? null;
+                const canPredict = !hasTbdTeam(match);
 
                 return (
                   <MatchCard
                     key={match._id}
                     match={match}
                     prediction={myPred}
-                    onPress={() => setSelectedMatch(match)}
+                    onPress={canPredict ? () => setSelectedMatch(match) : undefined}
                   />
                 );
               })}
@@ -177,7 +178,12 @@ export default function HomeScreen() {
                   league={league}
                   userId={user?.id}
                   compact
-                  onPress={() => navigation.navigate('LeagueDetail', { leagueId: league._id })}
+                  onPress={() =>
+                    navigation.navigate('Leagues', {
+                      screen: 'LeagueDetail',
+                      params: { leagueId: league._id },
+                    })
+                  }
                 />
               ))}
             </View>

@@ -43,18 +43,9 @@ export default function LeaguesScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.titleRow}>
         <Text style={styles.title}>Leagues</Text>
-      </View>
-
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('CreateLeague')}>
-          <Text style={styles.actionText}>Create League</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.secondaryButton]}
-          onPress={() => navigation.navigate('JoinLeague')}
-        >
-          <Text style={[styles.actionText, styles.secondaryText]}>Join League</Text>
-        </TouchableOpacity>
+        <Text style={styles.subtitle}>
+          {leagues.length > 0 ? `${leagues.length} private pools` : 'Join a private pool'}
+        </Text>
       </View>
 
       {loading ? (
@@ -74,10 +65,15 @@ export default function LeaguesScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
           }
+          ListFooterComponent={
+            <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('JoinLeague')}>
+              <Text style={styles.joinButtonText}>Join League</Text>
+            </TouchableOpacity>
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyText}>No leagues yet.</Text>
-              <Text style={styles.emptySubtext}>Create or join a league to compete with friends!</Text>
+              <Text style={styles.emptySubtext}>Join a league to compete with friends.</Text>
             </View>
           }
         />
@@ -91,22 +87,18 @@ const styles = StyleSheet.create({
 
   titleRow: { paddingHorizontal: 18, paddingTop: 22, paddingBottom: 12 },
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.display },
+  subtitle: { color: colors.muted, fontSize: 13, marginTop: 2, fontFamily: fonts.body },
 
-  actions: { flexDirection: 'row', paddingHorizontal: 18, paddingBottom: 12, gap: 10 },
-  actionButton: {
-    flex: 1,
-    backgroundColor: colors.accent,
-    paddingVertical: 12,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  secondaryButton: {
+  joinButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.borderMid,
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 8,
   },
-  actionText: { color: '#fff', fontWeight: '600', fontSize: 13, fontFamily: fonts.bodyMedium },
-  secondaryText: { color: colors.text },
+  joinButtonText: { color: colors.text, fontWeight: '600', fontSize: 13, fontFamily: fonts.bodyMedium },
 
   list: { padding: 18, paddingTop: 4, gap: 10 },
 

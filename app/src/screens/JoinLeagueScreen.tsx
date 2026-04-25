@@ -19,7 +19,17 @@ export default function JoinLeagueScreen() {
     try {
       const league = await joinLeague(code.trim().toUpperCase());
       Alert.alert('Joined!', `Welcome to ${league.name}`, [
-        { text: 'OK', onPress: () => navigation.navigate('LeagueDetail', { leagueId: league._id }) },
+        {
+          text: 'OK',
+          onPress: () =>
+            navigation.navigate('Main', {
+              screen: 'Leagues',
+              params: {
+                screen: 'LeagueDetail',
+                params: { leagueId: league._id },
+              },
+            }),
+        },
       ]);
     } catch (err: any) {
       Alert.alert('Error', err.response?.data?.error || 'Failed to join league');
@@ -65,7 +75,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: 10,
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontSize: fontSize.md, fontWeight: '600' },

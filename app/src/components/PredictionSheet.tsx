@@ -11,6 +11,7 @@ import {
 import { colors, borderRadius } from '../theme';
 import Flag from './ui/Flag';
 import { Match } from '../types';
+import { hasTbdTeam } from './MatchCard';
 
 interface PredictionSheetProps {
   match: Match | null;
@@ -72,6 +73,7 @@ export default function PredictionSheet({ match, existing, onSave, onClose }: Pr
 
   const save = () => {
     if (!match) return;
+    if (hasTbdTeam(match)) return;
     onSave(match._id, score);
     close();
   };
@@ -195,7 +197,7 @@ const styles = StyleSheet.create({
   stepper: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: 12,
     backgroundColor: colors.card2,
     borderWidth: 1,
     borderColor: colors.border,
@@ -226,7 +228,7 @@ const styles = StyleSheet.create({
   saveBtn: {
     width: '100%',
     padding: 16,
-    borderRadius: 9999,
+    borderRadius: 12,
     backgroundColor: colors.accent,
     alignItems: 'center',
   },

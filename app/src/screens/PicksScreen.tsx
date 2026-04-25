@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { fetchMatches } from '../api/matches';
 import { fetchMyPredictions, submitPrediction } from '../api/predictions';
 import { Match, Prediction } from '../types';
 import PredictionSheet from '../components/PredictionSheet';
-import MatchCard from '../components/MatchCard';
+import MatchCard, { hasTbdTeam } from '../components/MatchCard';
 import LoadingView from '../components/ui/LoadingView';
 import { colors, fonts } from '../theme';
 
@@ -23,6 +23,38 @@ function getResult(pred: Prediction, match: Match): 'exact' | 'correct' | 'wrong
   const pOut = pred.homeGoals > pred.awayGoals ? 'h' : pred.homeGoals < pred.awayGoals ? 'a' : 'd';
   const aOut = homeGoals > awayGoals ? 'h' : homeGoals < awayGoals ? 'a' : 'd';
   return pOut === aOut ? 'correct' : 'wrong';
+}
+
+function getDayKey(utcDate: string) {
+  const date = new Date(utcDate);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDayLabel(utcDate: string) {
+  return new Date(utcDate).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+function groupMatchesByDay(matches: Match[]) {
+  const groups = new Map<string, Match[]>();
+
+  matches.forEach((match) => {
+    const key = getDayKey(match.utcDate);
+    groups.set(key, [...(groups.get(key) ?? []), match]);
+  });
+
+  return Array.from(groups.entries()).map(([day, dayMatches]) => ({
+    day,
+    label: formatDayLabel(dayMatches[0].utcDate),
+    matches: dayMatches,
+  }));
 }
 
 export default function PicksScreen() {
@@ -55,9 +87,22 @@ export default function PicksScreen() {
 
   useEffect(() => { load(); }, []);
 
-  const upcoming = matches.filter((m) => m.status === 'SCHEDULED' || m.status === 'LIVE');
-  const finished = matches.filter((m) => m.status === 'FINISHED');
-  const shown = tab === 'upcoming' ? upcoming : finished;
+  const upcoming = useMemo(
+    () => matches.filter((m) => m.status === 'SCHEDULED' || m.status === 'LIVE'),
+    [matches],
+  );
+  const finished = useMemo(
+    () => matches.filter((m) => m.status === 'FINISHED'),
+    [matches],
+  );
+  const shown = useMemo(
+    () =>
+      [...(tab === 'upcoming' ? upcoming : finished)].sort(
+        (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
+      ),
+    [finished, tab, upcoming],
+  );
+  const matchGroups = useMemo(() => groupMatchesByDay(shown), [shown]);
 
   const handleSave = async (matchId: string, score: [number, number]) => {
     try {
@@ -108,22 +153,29 @@ export default function PicksScreen() {
         </View>
 
         {/* Match list */}
-        <View style={{ gap: 10 }}>
-          {shown.map((m) => {
-            const pred = predMap[m._id];
-            const result = m.status === 'FINISHED' && pred ? getResult(pred, m) : null;
-            const isUpcoming = m.status === 'SCHEDULED' || m.status === 'LIVE';
+        <View style={styles.matchGroups}>
+          {matchGroups.map((group) => (
+            <View key={group.day} style={styles.dayGroup}>
+              <Text style={styles.dayLabel}>{group.label}</Text>
+              <View style={styles.matchList}>
+                {group.matches.map((m) => {
+                  const pred = predMap[m._id];
+                  const result = m.status === 'FINISHED' && pred ? getResult(pred, m) : null;
+                  const canPredict = (m.status === 'SCHEDULED' || m.status === 'LIVE') && !hasTbdTeam(m);
 
-            return (
-              <MatchCard
-                key={m._id}
-                match={m}
-                prediction={pred}
-                result={result}
-                onPress={isUpcoming ? () => setSelectedMatch(m) : undefined}
-              />
-            );
-          })}
+                  return (
+                    <MatchCard
+                      key={m._id}
+                      match={m}
+                      prediction={pred}
+                      result={result}
+                      onPress={canPredict ? () => setSelectedMatch(m) : undefined}
+                    />
+                  );
+                })}
+              </View>
+            </View>
+          ))}
         </View>
 
         {shown.length === 0 && !refreshing && (
@@ -160,7 +212,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 4,
     borderWidth: 1,
     borderColor: colors.border,
@@ -168,12 +220,24 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: 9,
-    borderRadius: 9,
+    borderRadius: 8,
     alignItems: 'center',
   },
   tabActive: { backgroundColor: colors.accent },
   tabText: { color: colors.muted, fontSize: 13, fontWeight: '600', fontFamily: fonts.bodyMedium },
   tabTextActive: { color: '#fff' },
+
+  matchGroups: { gap: 18 },
+  dayGroup: { gap: 8 },
+  dayLabel: {
+    color: colors.dim,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    fontFamily: fonts.bodyMedium,
+  },
+  matchList: { gap: 10 },
 
   empty: { alignItems: 'center', paddingTop: 40 },
   emptyText: { color: colors.muted, fontSize: 14 },

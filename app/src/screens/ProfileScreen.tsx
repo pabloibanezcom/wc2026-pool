@@ -15,6 +15,7 @@ import { fetchMyPredictions } from '../api/predictions';
 import { League, Prediction } from '../types';
 import Avatar from '../components/ui/Avatar';
 import { colors, fonts } from '../theme';
+import { sortMembersByPoints } from '../utils/league';
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children.toUpperCase()}</Text>;
@@ -48,7 +49,7 @@ export default function ProfileScreen() {
 
   const myRank = league
     ? (() => {
-        const sorted = [...league.members].sort((a, b) => b.totalPoints - a.totalPoints);
+        const sorted = sortMembersByPoints(league.members);
         const idx = sorted.findIndex(
           (m) => (m.userId as any)?.id === user?.id || (m.userId as any)?._id === user?.id
         );
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
   name: { color: colors.text, fontSize: 26, fontFamily: fonts.display },
   email: { color: colors.muted, fontSize: 12, marginTop: 2, fontFamily: fonts.body },
   tags: { flexDirection: 'row', gap: 8 },
-  tag: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 9999 },
+  tag: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   tagText: { fontSize: 10, fontWeight: '600' },
 
   statsRow: { flexDirection: 'row', gap: 10 },

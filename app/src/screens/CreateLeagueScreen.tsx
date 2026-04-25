@@ -19,7 +19,17 @@ export default function CreateLeagueScreen() {
     try {
       const league = await createLeague(name.trim());
       Alert.alert('League Created!', `Invite code: ${league.inviteCode}`, [
-        { text: 'OK', onPress: () => navigation.navigate('LeagueDetail', { leagueId: league._id }) },
+        {
+          text: 'OK',
+          onPress: () =>
+            navigation.navigate('Main', {
+              screen: 'Leagues',
+              params: {
+                screen: 'LeagueDetail',
+                params: { leagueId: league._id },
+              },
+            }),
+        },
       ]);
     } catch {
       Alert.alert('Error', 'Failed to create league');
@@ -61,7 +71,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: 10,
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontSize: fontSize.md, fontWeight: '600' },

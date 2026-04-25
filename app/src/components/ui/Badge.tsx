@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
   base: {
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 9999,
+    borderRadius: 8,
   },
   text: {
     fontSize: 12,

@@ -18,7 +18,17 @@ import LeagueDetailScreen from '../screens/LeagueDetailScreen';
 import MatchDetailScreen from '../screens/MatchDetailScreen';
 
 const Stack = createNativeStackNavigator();
+const LeaguesStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+function LeaguesStackNavigator() {
+  return (
+    <LeaguesStack.Navigator screenOptions={{ headerShown: false }}>
+      <LeaguesStack.Screen name="LeagueList" component={LeaguesScreen} />
+      <LeaguesStack.Screen name="LeagueDetail" component={LeagueDetailScreen} />
+    </LeaguesStack.Navigator>
+  );
+}
 
 function MainTabs() {
   return (
@@ -54,8 +64,13 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Leagues"
-        component={LeaguesScreen}
+        component={LeaguesStackNavigator}
         options={{ title: 'Leagues', tabBarLabel: 'Leagues' }}
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            navigation.navigate('Leagues', { screen: 'LeagueList' });
+          },
+        })}
       />
       <Tab.Screen
         name="Predictions"
@@ -101,11 +116,6 @@ export default function RootNavigator() {
               name="JoinLeague"
               component={JoinLeagueScreen}
               options={{ headerShown: true, title: 'Join League', presentation: 'modal', animation: 'slide_from_bottom' }}
-            />
-            <Stack.Screen
-              name="LeagueDetail"
-              component={LeagueDetailScreen}
-              options={{ headerShown: true, title: 'League', animation: 'slide_from_right' }}
             />
             <Stack.Screen
               name="MatchDetail"

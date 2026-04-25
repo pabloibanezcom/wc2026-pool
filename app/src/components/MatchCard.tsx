@@ -6,7 +6,7 @@ import Badge from './ui/Badge';
 import { colors, fonts } from '../theme';
 
 type Result = 'exact' | 'correct' | 'wrong';
-type MatchCardState = 'empty' | 'predicted' | 'live' | 'finished';
+type MatchCardState = 'empty' | 'tbd' | 'predicted' | 'live' | 'finished';
 
 interface Props {
   match: Match;
@@ -31,6 +31,12 @@ function getTeamLabel(name: string, code?: string) {
   return name.slice(0, 3).toUpperCase();
 }
 
+export function hasTbdTeam(match: Match) {
+  return [match.homeTeam, match.awayTeam].some(
+    (team) => team.code.trim().toUpperCase() === 'TBD' || team.name.trim().toUpperCase() === 'TBD',
+  );
+}
+
 function getCardState(match: Match, prediction?: Prediction | null): MatchCardState {
   if (match.status === 'FINISHED') {
     return 'finished';
@@ -38,6 +44,10 @@ function getCardState(match: Match, prediction?: Prediction | null): MatchCardSt
 
   if (match.status === 'LIVE') {
     return 'live';
+  }
+
+  if (hasTbdTeam(match)) {
+    return 'tbd';
   }
 
   return prediction ? 'predicted' : 'empty';
@@ -63,6 +73,8 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
         <Text style={styles.predictBtnText}>Predict →</Text>
       </View>
     );
+  } else if (state === 'tbd') {
+    action = <Text style={styles.tbdBadge}>Teams TBD</Text>;
   } else if (state === 'predicted') {
     action = <Text style={styles.predictedBadge}>✓ Predicted</Text>;
   } else if (state === 'live') {
@@ -101,6 +113,8 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
         <View style={styles.scoreCenter}>
           {state === 'empty' ? (
             <Text style={styles.vsText}>vs</Text>
+          ) : state === 'tbd' ? (
+            <Text style={styles.vsText}>TBD</Text>
           ) : state === 'predicted' ? (
             <Text style={styles.predictedScore}>
               {prediction?.homeGoals} – {prediction?.awayGoals}
@@ -172,7 +186,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: 8,
   },
   predictBtnText: {
     color: '#fff',
@@ -185,11 +199,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
   },
+  tbdBadge: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
+  },
   livePill: {
     backgroundColor: 'rgba(226,59,74,0.14)',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: 8,
   },
   liveText: {
     color: colors.danger,

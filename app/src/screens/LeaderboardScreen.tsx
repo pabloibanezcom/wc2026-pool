@@ -12,6 +12,7 @@ import { fetchMyLeagues } from '../api/leagues';
 import { League, LeagueMember } from '../types';
 import Avatar from '../components/ui/Avatar';
 import { colors, fonts } from '../theme';
+import { memberPoints, sortMembersByPoints } from '../utils/league';
 
 const MEMBER_COLORS = ['#494fdf', '#00a87e', '#e61e49', '#ec7e00', '#936d62'];
 
@@ -42,7 +43,7 @@ export default function LeaderboardScreen() {
   useEffect(() => { load(); }, []);
 
   const members: LeagueMember[] = league
-    ? [...league.members].sort((a, b) => b.totalPoints - a.totalPoints)
+    ? sortMembersByPoints(league.members)
     : [];
 
   const top3 = members.slice(0, 3);
@@ -109,11 +110,11 @@ export default function LeaderboardScreen() {
                         )}
                       </View>
                       <Text style={styles.memberSub}>
-                        {member.totalPoints} total points
+                        {memberPoints(member)} total points
                       </Text>
                     </View>
                     <Text style={styles.memberPts}>
-                      {member.totalPoints}
+                      {memberPoints(member)}
                       <Text style={styles.memberPtsSuffix}> pts</Text>
                     </Text>
                   </View>
@@ -182,7 +183,7 @@ function PodiumSlot({
       <Text style={[styles.podiumName, elevated && styles.podiumNameLarge]}>{name}</Text>
       <View style={[styles.podiumBadge, elevated && styles.podiumBadgeAccent]}>
         <Text style={[styles.podiumBadgeText, elevated && { color: colors.accent, fontSize: 14 }]}>
-          {medal} {member.totalPoints}pts
+          {medal} {memberPoints(member)}pts
         </Text>
       </View>
     </View>
@@ -236,7 +237,7 @@ const styles = StyleSheet.create({
   rankNum: { color: colors.dim, fontSize: 13, fontWeight: '700' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   memberName: { color: colors.text, fontSize: 14, fontWeight: '600', fontFamily: fonts.bodyMedium },
-  youBadge: { backgroundColor: colors.blueDim, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 9999 },
+  youBadge: { backgroundColor: colors.blueDim, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 8 },
   youText: { color: colors.blue, fontSize: 10 },
   memberSub: { color: colors.dim, fontSize: 10, marginTop: 1 },
   memberPts: { color: colors.accent, fontSize: 16, fontWeight: '700' },

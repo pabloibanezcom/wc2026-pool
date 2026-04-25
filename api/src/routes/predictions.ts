@@ -20,6 +20,10 @@ function deriveWinner(home: number, away: number): MatchWinner {
   return 'DRAW';
 }
 
+function isTeamTbd(team: { name: string; code: string }): boolean {
+  return team.code.trim().toUpperCase() === 'TBD' || team.name.trim().toUpperCase() === 'TBD';
+}
+
 function serializePrediction<T extends { _id: unknown; userId: unknown; matchId: unknown }>(prediction: T) {
   return {
     ...prediction,
@@ -36,6 +40,11 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
     const match = await Match.findById(matchId);
     if (!match) {
       res.status(404).json({ error: 'Match not found' });
+      return;
+    }
+
+    if (isTeamTbd(match.homeTeam) || isTeamTbd(match.awayTeam)) {
+      res.status(400).json({ error: 'Predictions are not available until both teams are confirmed.' });
       return;
     }
 

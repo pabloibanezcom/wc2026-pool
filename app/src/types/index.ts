@@ -1,5 +1,6 @@
 export interface User {
   id: string;
+  _id?: string;
   name: string;
   email: string;
   avatarUrl: string;
@@ -56,6 +57,8 @@ export interface Prediction {
 export interface LeagueMember {
   userId: User;
   joinedAt: string;
+  isAdmin?: boolean;
+  totalPoints?: number;
 }
 
 export interface League {

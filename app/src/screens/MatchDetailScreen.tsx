@@ -6,6 +6,7 @@ import { submitPrediction } from '../api/predictions';
 import { Match, Prediction } from '../types';
 import { colors, spacing, fontSize, borderRadius } from '../theme';
 import { format } from 'date-fns';
+import { hasTbdTeam } from '../components/MatchCard';
 
 type RouteParams = { MatchDetail: { matchId: string } };
 
@@ -38,6 +39,11 @@ export default function MatchDetailScreen() {
 
   const handleSubmit = async () => {
     if (!match) return;
+    if (hasTbdTeam(match)) {
+      Alert.alert('Predictions open once both teams are confirmed.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const pred = await submitPrediction(match._id, homeGoals, awayGoals);
@@ -51,6 +57,8 @@ export default function MatchDetailScreen() {
   };
 
   const isLocked = match ? new Date() >= new Date(match.utcDate) : false;
+  const teamsTbd = match ? hasTbdTeam(match) : false;
+  const predictionDisabled = isLocked || teamsTbd;
 
   if (loading) {
     return (
@@ -92,7 +100,7 @@ export default function MatchDetailScreen() {
       {/* Prediction section */}
       <View style={styles.predictionSection}>
         <Text style={styles.sectionTitle}>
-          {isLocked ? 'Your Prediction' : 'Make Your Prediction'}
+          {predictionDisabled ? 'Your Prediction' : 'Make Your Prediction'}
         </Text>
 
         {prediction?.points != null && (
@@ -108,7 +116,7 @@ export default function MatchDetailScreen() {
               <TouchableOpacity
                 style={styles.stepButton}
                 onPress={() => setHomeGoals(Math.max(0, homeGoals - 1))}
-                disabled={isLocked}
+                disabled={predictionDisabled}
               >
                 <Text style={styles.stepText}>−</Text>
               </TouchableOpacity>
@@ -116,7 +124,7 @@ export default function MatchDetailScreen() {
               <TouchableOpacity
                 style={styles.stepButton}
                 onPress={() => setHomeGoals(Math.min(15, homeGoals + 1))}
-                disabled={isLocked}
+                disabled={predictionDisabled}
               >
                 <Text style={styles.stepText}>+</Text>
               </TouchableOpacity>
@@ -131,7 +139,7 @@ export default function MatchDetailScreen() {
               <TouchableOpacity
                 style={styles.stepButton}
                 onPress={() => setAwayGoals(Math.max(0, awayGoals - 1))}
-                disabled={isLocked}
+                disabled={predictionDisabled}
               >
                 <Text style={styles.stepText}>−</Text>
               </TouchableOpacity>
@@ -139,7 +147,7 @@ export default function MatchDetailScreen() {
               <TouchableOpacity
                 style={styles.stepButton}
                 onPress={() => setAwayGoals(Math.min(15, awayGoals + 1))}
-                disabled={isLocked}
+                disabled={predictionDisabled}
               >
                 <Text style={styles.stepText}>+</Text>
               </TouchableOpacity>
@@ -147,7 +155,7 @@ export default function MatchDetailScreen() {
           </View>
         </View>
 
-        {!isLocked && (
+        {!predictionDisabled && (
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={submitting}>
             {submitting ? (
               <ActivityIndicator color="#fff" />
@@ -157,8 +165,10 @@ export default function MatchDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {isLocked && !prediction && (
-          <Text style={styles.lockedText}>Predictions are locked for this match.</Text>
+        {predictionDisabled && !prediction && (
+          <Text style={styles.lockedText}>
+            {teamsTbd ? 'Predictions open once both teams are confirmed.' : 'Predictions are locked for this match.'}
+          </Text>
         )}
       </View>
     </View>
@@ -188,7 +198,7 @@ const styles = StyleSheet.create({
   stepText: { fontSize: fontSize.xl, color: colors.primary, fontWeight: '600' },
   scoreValue: { fontSize: fontSize.xxl, fontWeight: '800', paddingHorizontal: spacing.md, minWidth: 48, textAlign: 'center' },
   scoreDash: { fontSize: fontSize.xl, color: colors.textLight, marginHorizontal: spacing.sm },
-  submitButton: { backgroundColor: colors.primary, paddingVertical: spacing.md, borderRadius: borderRadius.md, alignItems: 'center' },
+  submitButton: { backgroundColor: colors.primary, paddingVertical: spacing.md, borderRadius: 10, alignItems: 'center' },
   submitText: { color: '#fff', fontSize: fontSize.md, fontWeight: '600' },
   lockedText: { color: colors.textSecondary, textAlign: 'center', fontStyle: 'italic' },
 });

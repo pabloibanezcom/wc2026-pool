@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   passwordBtn: {
     marginTop: 6,
     minHeight: 52,
-    borderRadius: 9999,
+    borderRadius: 12,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 15,
     paddingHorizontal: 24,
-    borderRadius: 9999,
+    borderRadius: 12,
     backgroundColor: '#ffffff',
     flexDirection: 'row',
     alignItems: 'center',
