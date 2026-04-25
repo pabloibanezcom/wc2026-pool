@@ -36,6 +36,7 @@ function MainTabs() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.dim,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' as const, fontFamily: fonts.bodyMedium },
+        animation: 'shift',
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
           if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
@@ -94,22 +95,22 @@ export default function RootNavigator() {
             <Stack.Screen
               name="CreateLeague"
               component={CreateLeagueScreen}
-              options={{ headerShown: true, title: 'Create League' }}
+              options={{ headerShown: true, title: 'Create League', presentation: 'modal', animation: 'slide_from_bottom' }}
             />
             <Stack.Screen
               name="JoinLeague"
               component={JoinLeagueScreen}
-              options={{ headerShown: true, title: 'Join League' }}
+              options={{ headerShown: true, title: 'Join League', presentation: 'modal', animation: 'slide_from_bottom' }}
             />
             <Stack.Screen
               name="LeagueDetail"
               component={LeagueDetailScreen}
-              options={{ headerShown: true, title: 'League' }}
+              options={{ headerShown: true, title: 'League', animation: 'slide_from_right' }}
             />
             <Stack.Screen
               name="MatchDetail"
               component={MatchDetailScreen}
-              options={{ headerShown: true, title: 'Match' }}
+              options={{ headerShown: true, title: 'Match', animation: 'slide_from_right' }}
             />
           </>
         ) : (
