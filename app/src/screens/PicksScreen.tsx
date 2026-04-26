@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import {
   Animated,
   PanResponder,
+  Platform,
   View,
   Text,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as SecureStore from 'expo-secure-store';
 import { fetchMatches } from '../api/matches';
 import {
   fetchMyGroupPredictions,
@@ -22,7 +24,35 @@ import PredictionSheet from '../components/PredictionSheet';
 import MatchCard, { hasTbdTeam } from '../components/MatchCard';
 import LoadingView from '../components/ui/LoadingView';
 import Flag from '../components/ui/Flag';
+import TournamentPicksSection from '../components/TournamentPicksSection';
+import { TournamentPicks, PlayerOption, TeamOption } from '../data/tournamentData';
 import { colors, fonts } from '../theme';
+
+const TOURNAMENT_PICKS_KEY = 'wcp_tournament_picks';
+
+async function loadTournamentPicks(): Promise<TournamentPicks> {
+  try {
+    const raw = Platform.OS === 'web'
+      ? localStorage.getItem(TOURNAMENT_PICKS_KEY)
+      : await SecureStore.getItemAsync(TOURNAMENT_PICKS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function saveTournamentPicks(picks: TournamentPicks): Promise<void> {
+  try {
+    const raw = JSON.stringify(picks);
+    if (Platform.OS === 'web') {
+      localStorage.setItem(TOURNAMENT_PICKS_KEY, raw);
+    } else {
+      await SecureStore.setItemAsync(TOURNAMENT_PICKS_KEY, raw);
+    }
+  } catch {
+    // silently fail
+  }
+}
 
 function getResult(pred: Prediction, match: Match): 'exact' | 'correct' | 'wrong' | null {
   if (!match.result) return null;
@@ -70,7 +100,7 @@ interface GroupStanding {
   teams: TeamInfo[];
 }
 
-const PICK_TABS = ['upcoming', 'results', 'groups'] as const;
+const PICK_TABS = ['upcoming', 'results', 'groups', 'finals'] as const;
 type PicksTab = typeof PICK_TABS[number];
 
 function isTbdTeam(team: TeamInfo) {
@@ -115,6 +145,8 @@ export default function PicksScreen() {
   const [loading, setLoading] = useState(true);
   const [isDraggingGroupTeam, setIsDraggingGroupTeam] = useState(false);
 
+  const [tournamentPicks, setTournamentPicks] = useState<TournamentPicks>({});
+
   const predMap = Object.fromEntries(predictions.map((p) => [p.matchId, p]));
   const groupPredMap = Object.fromEntries(groupPredictions.map((p) => [p.group, p]));
 
@@ -142,6 +174,21 @@ export default function PicksScreen() {
   }, []);
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    loadTournamentPicks().then(setTournamentPicks);
+  }, []);
+
+  const handleTournamentPick = useCallback(
+    (key: keyof TournamentPicks, value: TeamOption | PlayerOption) => {
+      setTournamentPicks((prev) => {
+        const next = { ...prev, [key]: value };
+        saveTournamentPicks(next);
+        return next;
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -246,7 +293,7 @@ export default function PicksScreen() {
                 onPress={() => setTab(t)}
               >
                 <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                  {t === 'upcoming' ? 'Upcoming' : t === 'results' ? 'Results' : 'Groups'}
+                  {t === 'upcoming' ? 'Upcoming' : t === 'results' ? 'Results' : t === 'groups' ? 'Groups' : 'Finals'}
                 </Text>
               </TouchableOpacity>
             );
@@ -261,7 +308,12 @@ export default function PicksScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
-        {tab === 'groups' ? (
+        {tab === 'finals' ? (
+          <TournamentPicksSection
+            picks={tournamentPicks}
+            onPickChange={handleTournamentPick}
+          />
+        ) : tab === 'groups' ? (
           <View style={styles.groupCards}>
             {groupStandings.map((group) => (
               <GroupCard
@@ -306,7 +358,7 @@ export default function PicksScreen() {
           </View>
         )}
 
-        {tab !== 'groups' && shown.length === 0 && !refreshing && (
+        {tab !== 'groups' && tab !== 'finals' && shown.length === 0 && !refreshing && (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>
               {tab === 'upcoming' ? 'No upcoming matches.' : 'No results yet.'}
