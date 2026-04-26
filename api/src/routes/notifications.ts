@@ -46,4 +46,14 @@ router.delete('/subscribe', authMiddleware, async (req: AuthRequest, res: Respon
   res.json({ ok: true });
 });
 
+router.post('/test', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const { sendToUser } = await import('../services/pushService');
+  await sendToUser(req.userId!, {
+    title: 'Test notification',
+    body: 'Push notifications are working!',
+    url: '/',
+  });
+  res.json({ ok: true });
+});
+
 export default router;
