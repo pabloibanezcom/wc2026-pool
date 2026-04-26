@@ -8,6 +8,7 @@ import matchRoutes from './routes/matches';
 import predictionRoutes from './routes/predictions';
 import leagueRoutes from './routes/leagues';
 import adminRoutes from './routes/admin';
+import notificationRoutes from './routes/notifications';
 
 export const app = express();
 
@@ -34,5 +35,6 @@ app.use('/matches', matchRoutes);
 app.use('/predictions', predictionRoutes);
 app.use('/leagues', leagueRoutes);
 app.use('/admin', adminRoutes);
+app.use('/notifications', notificationRoutes);
 
 app.use(errorHandler);

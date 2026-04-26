@@ -25,6 +25,9 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().default(''),
   FOOTBALL_DATA_API_KEY: z.string().default(''),
   SYNC_API_KEY: z.string().default(''),
+  VAPID_PUBLIC_KEY: z.string().default(''),
+  VAPID_PRIVATE_KEY: z.string().default(''),
+  VAPID_EMAIL: z.string().default(''),
 });
 
 export const env = envSchema.parse(process.env);

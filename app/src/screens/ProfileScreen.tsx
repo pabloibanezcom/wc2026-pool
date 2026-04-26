@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Switch,
   Image,
   Alert,
 } from 'react-native';
@@ -16,6 +17,7 @@ import { League, Prediction } from '../types';
 import Avatar from '../components/ui/Avatar';
 import { colors, fonts } from '../theme';
 import { sortMembersByPoints } from '../utils/league';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children.toUpperCase()}</Text>;
@@ -34,6 +36,7 @@ export default function ProfileScreen() {
   const signOut = useAuthStore((s) => s.signOut);
   const [league, setLeague] = useState<League | null>(null);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const { isSubscribed, loading: pushLoading, subscribe, unsubscribe, isSupported: pushSupported } = usePushNotifications();
 
   useEffect(() => {
     Promise.all([fetchMyLeagues(), fetchMyPredictions()])
@@ -64,22 +67,9 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const sections = [
-    {
-      title: 'Notifications',
-      items: [
-        { label: 'Match reminders', value: 'On' },
-        { label: 'Result alerts', value: 'On' },
-        { label: 'Leaderboard updates', value: 'Off' },
-      ],
-    },
-    {
-      title: 'Account',
-      items: [
-        { label: 'Edit profile', value: '' },
-        { label: 'Sign out', value: '', danger: true, onPress: handleSignOut },
-      ],
-    },
+  const accountItems = [
+    { label: 'Edit profile', value: '' },
+    { label: 'Sign out', value: '', danger: true, onPress: handleSignOut },
   ];
 
   return (
@@ -117,30 +107,47 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Sections */}
-        {sections.map(({ title, items }) => (
-          <View key={title}>
-            <SectionLabel>{title}</SectionLabel>
+        {/* Notifications */}
+        {pushSupported && (
+          <View>
+            <SectionLabel>Notifications</SectionLabel>
             <View style={styles.card}>
-              {items.map((item, i) => (
-                <TouchableOpacity
-                  key={item.label}
-                  style={[styles.settingsRow, i < items.length - 1 && styles.settingsRowBorder]}
-                  onPress={item.onPress}
-                  disabled={!item.onPress}
-                >
-                  <Text style={[styles.settingsLabel, item.danger && { color: colors.danger }]}>
-                    {item.label}
-                  </Text>
-                  <View style={styles.settingsRight}>
-                    {!!item.value && <Text style={styles.settingsValue}>{item.value}</Text>}
-                    <Text style={styles.chevron}>›</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+              <View style={styles.settingsRow}>
+                <Text style={styles.settingsLabel}>Push notifications</Text>
+                <Switch
+                  value={isSubscribed}
+                  onValueChange={isSubscribed ? unsubscribe : subscribe}
+                  disabled={pushLoading}
+                  trackColor={{ true: colors.accent, false: colors.border }}
+                  thumbColor={colors.text}
+                />
+              </View>
             </View>
           </View>
-        ))}
+        )}
+
+        {/* Account */}
+        <View>
+          <SectionLabel>Account</SectionLabel>
+          <View style={styles.card}>
+            {accountItems.map((item, i) => (
+              <TouchableOpacity
+                key={item.label}
+                style={[styles.settingsRow, i < accountItems.length - 1 && styles.settingsRowBorder]}
+                onPress={item.onPress}
+                disabled={!item.onPress}
+              >
+                <Text style={[styles.settingsLabel, item.danger && { color: colors.danger }]}>
+                  {item.label}
+                </Text>
+                <View style={styles.settingsRight}>
+                  {!!item.value && <Text style={styles.settingsValue}>{item.value}</Text>}
+                  <Text style={styles.chevron}>›</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

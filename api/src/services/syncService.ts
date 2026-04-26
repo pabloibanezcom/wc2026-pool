@@ -5,6 +5,7 @@ import { fetchAllMatches, mapExternalMatch } from './footballApi';
 import { calculatePoints } from './scoring';
 import { logger } from '../config/logger';
 import { MatchStage } from '../models/Match';
+import { sendToUser } from './pushService';
 
 export async function syncAllFixtures(): Promise<{ fixturesSynced: number }> {
   logger.info('Syncing all fixtures...');
@@ -44,6 +45,12 @@ export async function processFinishedMatches(): Promise<{
 
       prediction.points = points;
       await prediction.save();
+
+      sendToUser(prediction.userId.toString(), {
+        title: `${match.homeTeam.name} ${match.result!.homeGoals}–${match.result!.awayGoals} ${match.awayTeam.name}`,
+        body: points > 0 ? `You earned ${points} point${points !== 1 ? 's' : ''}!` : 'No points this time — better luck next match.',
+        url: '/picks',
+      }).catch(() => {});
     }
 
     predictionsScored += predictions.length;
