@@ -2,9 +2,10 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Match } from '../models/Match';
 import { Prediction } from '../models/Prediction';
+import { GroupPrediction } from '../models/GroupPrediction';
 import { League } from '../models/League';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
-import { MatchWinner } from '../models/Match';
+import { ITeamInfo, MatchWinner } from '../models/Match';
 
 const router = Router();
 
@@ -12,6 +13,15 @@ const predictionSchema = z.object({
   matchId: z.string().min(1),
   homeGoals: z.number().int().min(0).max(15),
   awayGoals: z.number().int().min(0).max(15),
+});
+
+const groupPredictionSchema = z.object({
+  group: z.string().min(1).max(8),
+  orderedTeams: z.array(z.object({
+    name: z.string().min(1),
+    code: z.string().min(1),
+    crest: z.string().default(''),
+  })).min(2).max(6),
 });
 
 function deriveWinner(home: number, away: number): MatchWinner {
@@ -22,6 +32,14 @@ function deriveWinner(home: number, away: number): MatchWinner {
 
 function isTeamTbd(team: { name: string; code: string }): boolean {
   return team.code.trim().toUpperCase() === 'TBD' || team.name.trim().toUpperCase() === 'TBD';
+}
+
+function serializeGroupPrediction<T extends { _id: unknown; userId: unknown }>(prediction: T) {
+  return {
+    ...prediction,
+    _id: String(prediction._id),
+    userId: String(prediction.userId),
+  };
 }
 
 function serializePrediction<T extends { _id: unknown; userId: unknown; matchId: unknown }>(prediction: T) {
@@ -65,6 +83,76 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ error: 'Invalid prediction data', details: error.errors });
+      return;
+    }
+    throw error;
+  }
+});
+
+router.get('/groups/mine', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const predictions = await GroupPrediction.find({ userId: req.userId })
+    .sort({ group: 1 })
+    .lean();
+
+  res.json({ predictions: predictions.map(serializeGroupPrediction) });
+});
+
+router.post('/groups', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { group, orderedTeams } = groupPredictionSchema.parse(req.body);
+    const normalizedGroup = group.trim().toUpperCase();
+    const normalizedTeams = orderedTeams.map((team) => ({
+      ...team,
+      name: team.name.trim(),
+      code: team.code.trim().toUpperCase(),
+    }));
+
+    if (normalizedTeams.some(isTeamTbd)) {
+      res.status(400).json({ error: 'Group predictions are not available until all teams are confirmed.' });
+      return;
+    }
+
+    const uniqueCodes = new Set(normalizedTeams.map((team) => team.code));
+    if (uniqueCodes.size !== normalizedTeams.length) {
+      res.status(400).json({ error: 'Each team can only appear once in a group prediction.' });
+      return;
+    }
+
+    const groupMatches = await Match.find({ stage: 'GROUP', group: normalizedGroup }).lean();
+    if (groupMatches.length === 0) {
+      res.status(404).json({ error: 'Group not found' });
+      return;
+    }
+
+    if (groupMatches.some((match) => new Date() >= match.utcDate)) {
+      res.status(400).json({ error: 'This group has already started. Predictions are locked.' });
+      return;
+    }
+
+    const knownTeams = new Map<string, ITeamInfo>();
+    for (const match of groupMatches) {
+      if (!isTeamTbd(match.homeTeam)) knownTeams.set(match.homeTeam.code.toUpperCase(), match.homeTeam);
+      if (!isTeamTbd(match.awayTeam)) knownTeams.set(match.awayTeam.code.toUpperCase(), match.awayTeam);
+    }
+
+    if (
+      knownTeams.size !== normalizedTeams.length ||
+      normalizedTeams.some((team) => !knownTeams.has(team.code))
+    ) {
+      res.status(400).json({ error: 'Group prediction must include all confirmed teams in this group.' });
+      return;
+    }
+
+    const prediction = await GroupPrediction.findOneAndUpdate(
+      { userId: req.userId, group: normalizedGroup },
+      { group: normalizedGroup, orderedTeams: normalizedTeams, points: null },
+      { upsert: true, new: true }
+    );
+
+    res.json({ prediction: serializeGroupPrediction(prediction.toObject()) });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Invalid group prediction data', details: error.errors });
       return;
     }
     throw error;

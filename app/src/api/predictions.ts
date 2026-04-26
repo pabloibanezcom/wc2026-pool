@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Prediction } from '../types';
+import { GroupPrediction, Prediction, TeamInfo } from '../types';
 
 function normalizePrediction(prediction: Prediction & { matchId: unknown }): Prediction {
   let normalizedMatchId = '';
@@ -30,4 +30,17 @@ export async function fetchMyPredictions(stage?: string): Promise<Prediction[]> 
   return data.predictions.map((prediction) =>
     normalizePrediction(prediction as Prediction & { matchId: unknown })
   );
+}
+
+export async function fetchMyGroupPredictions(): Promise<GroupPrediction[]> {
+  const { data } = await apiClient.get<{ predictions: GroupPrediction[] }>('/predictions/groups/mine');
+  return data.predictions;
+}
+
+export async function submitGroupPrediction(group: string, orderedTeams: TeamInfo[]): Promise<GroupPrediction> {
+  const { data } = await apiClient.post<{ prediction: GroupPrediction }>('/predictions/groups', {
+    group,
+    orderedTeams,
+  });
+  return data.prediction;
 }

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
+  Animated,
+  PanResponder,
   View,
   Text,
   StyleSheet,
@@ -9,11 +11,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchMatches } from '../api/matches';
-import { fetchMyPredictions, submitPrediction } from '../api/predictions';
-import { Match, Prediction } from '../types';
+import {
+  fetchMyGroupPredictions,
+  fetchMyPredictions,
+  submitGroupPrediction,
+  submitPrediction,
+} from '../api/predictions';
+import { GroupPrediction, Match, Prediction, TeamInfo } from '../types';
 import PredictionSheet from '../components/PredictionSheet';
 import MatchCard, { hasTbdTeam } from '../components/MatchCard';
 import LoadingView from '../components/ui/LoadingView';
+import Flag from '../components/ui/Flag';
 import { colors, fonts } from '../theme';
 
 function getResult(pred: Prediction, match: Match): 'exact' | 'correct' | 'wrong' | null {
@@ -57,21 +65,63 @@ function groupMatchesByDay(matches: Match[]) {
   }));
 }
 
+interface GroupStanding {
+  id: string;
+  teams: TeamInfo[];
+}
+
+function isTbdTeam(team: TeamInfo) {
+  return team.code.trim().toUpperCase() === 'TBD' || team.name.trim().toUpperCase() === 'TBD';
+}
+
+function getGroupsFromMatches(matches: Match[]): GroupStanding[] {
+  const groups = new Map<string, Map<string, TeamInfo>>();
+
+  matches.forEach((match) => {
+    if (match.stage !== 'GROUP' || !match.group) return;
+
+    const group = groups.get(match.group) ?? new Map<string, TeamInfo>();
+    [match.homeTeam, match.awayTeam].forEach((team) => {
+      const code = team.code.trim().toUpperCase();
+      if (code && !isTbdTeam(team)) {
+        group.set(code, { ...team, code });
+      }
+    });
+    groups.set(match.group, group);
+  });
+
+  return Array.from(groups.entries())
+    .map(([id, teams]) => ({
+      id,
+      teams: Array.from(teams.values()).sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    .filter((group) => group.teams.length >= 2)
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
 export default function PicksScreen() {
-  const [tab, setTab] = useState<'upcoming' | 'results'>('upcoming');
+  const [tab, setTab] = useState<'upcoming' | 'results' | 'groups'>('upcoming');
   const [matches, setMatches] = useState<Match[]>([]);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [groupPredictions, setGroupPredictions] = useState<GroupPrediction[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isDraggingGroupTeam, setIsDraggingGroupTeam] = useState(false);
 
   const predMap = Object.fromEntries(predictions.map((p) => [p.matchId, p]));
+  const groupPredMap = Object.fromEntries(groupPredictions.map((p) => [p.group, p]));
 
   const load = async () => {
     try {
-      const [m, p] = await Promise.all([fetchMatches({}), fetchMyPredictions()]);
+      const [m, p, gp] = await Promise.all([
+        fetchMatches({}),
+        fetchMyPredictions(),
+        fetchMyGroupPredictions(),
+      ]);
       setMatches(m);
       setPredictions(p);
+      setGroupPredictions(gp);
     } catch {
       // silently fail
     } finally {
@@ -103,6 +153,7 @@ export default function PicksScreen() {
     [finished, tab, upcoming],
   );
   const matchGroups = useMemo(() => groupMatchesByDay(shown), [shown]);
+  const groupStandings = useMemo(() => getGroupsFromMatches(matches), [matches]);
 
   const handleSave = async (matchId: string, score: [number, number]) => {
     try {
@@ -110,6 +161,24 @@ export default function PicksScreen() {
       setPredictions((prev) => [...prev.filter((p) => p.matchId !== matchId), pred]);
     } catch {
       // silently fail
+    }
+  };
+
+  const handleGroupOrder = async (groupId: string, orderedTeams: TeamInfo[]) => {
+    setGroupPredictions((prev) => {
+      const existing = prev.find((prediction) => prediction.group === groupId);
+      const optimistic: GroupPrediction = existing
+        ? { ...existing, orderedTeams }
+        : { _id: `local-${groupId}`, userId: '', group: groupId, orderedTeams, points: null };
+
+      return [...prev.filter((prediction) => prediction.group !== groupId), optimistic];
+    });
+
+    try {
+      const saved = await submitGroupPrediction(groupId, orderedTeams);
+      setGroupPredictions((prev) => [...prev.filter((prediction) => prediction.group !== groupId), saved]);
+    } catch {
+      await load();
     }
   };
 
@@ -125,6 +194,7 @@ export default function PicksScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scroll}
+        scrollEnabled={!isDraggingGroupTeam}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
@@ -135,9 +205,9 @@ export default function PicksScreen() {
 
         {/* Tabs */}
         <View style={styles.tabBar}>
-          {(['upcoming', 'results'] as const).map((t) => {
+          {(['upcoming', 'results', 'groups'] as const).map((t) => {
             const active = tab === t;
-            const count = t === 'upcoming' ? upcoming.length : finished.length;
+            const count = t === 'upcoming' ? upcoming.length : t === 'results' ? finished.length : groupStandings.length;
             return (
               <TouchableOpacity
                 key={t}
@@ -145,40 +215,59 @@ export default function PicksScreen() {
                 onPress={() => setTab(t)}
               >
                 <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                  {t === 'upcoming' ? `Upcoming (${count})` : `Results (${count})`}
+                  {t === 'upcoming' ? `Upcoming (${count})` : t === 'results' ? `Results (${count})` : `Groups (${count})`}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Match list */}
-        <View style={styles.matchGroups}>
-          {matchGroups.map((group) => (
-            <View key={group.day} style={styles.dayGroup}>
-              <Text style={styles.dayLabel}>{group.label}</Text>
-              <View style={styles.matchList}>
-                {group.matches.map((m) => {
-                  const pred = predMap[m._id];
-                  const result = m.status === 'FINISHED' && pred ? getResult(pred, m) : null;
-                  const canPredict = (m.status === 'SCHEDULED' || m.status === 'LIVE') && !hasTbdTeam(m);
+        {tab === 'groups' ? (
+          <View style={styles.groupCards}>
+            {groupStandings.map((group) => (
+              <GroupCard
+                key={group.id}
+                group={group}
+                order={groupPredMap[group.id]?.orderedTeams ?? group.teams}
+                onOrderChange={handleGroupOrder}
+                onDragStateChange={setIsDraggingGroupTeam}
+              />
+            ))}
 
-                  return (
-                    <MatchCard
-                      key={m._id}
-                      match={m}
-                      prediction={pred}
-                      result={result}
-                      onPress={canPredict ? () => setSelectedMatch(m) : undefined}
-                    />
-                  );
-                })}
+            {groupStandings.length === 0 && !refreshing && (
+              <View style={styles.empty}>
+                <Text style={styles.emptyText}>Groups will appear once teams are confirmed.</Text>
               </View>
-            </View>
-          ))}
-        </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.matchGroups}>
+            {matchGroups.map((group) => (
+              <View key={group.day} style={styles.dayGroup}>
+                <Text style={styles.dayLabel}>{group.label}</Text>
+                <View style={styles.matchList}>
+                  {group.matches.map((m) => {
+                    const pred = predMap[m._id];
+                    const result = m.status === 'FINISHED' && pred ? getResult(pred, m) : null;
+                    const canPredict = (m.status === 'SCHEDULED' || m.status === 'LIVE') && !hasTbdTeam(m);
 
-        {shown.length === 0 && !refreshing && (
+                    return (
+                      <MatchCard
+                        key={m._id}
+                        match={m}
+                        prediction={pred}
+                        result={result}
+                        onPress={canPredict ? () => setSelectedMatch(m) : undefined}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {tab !== 'groups' && shown.length === 0 && !refreshing && (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>
               {tab === 'upcoming' ? 'No upcoming matches.' : 'No results yet.'}
@@ -198,6 +287,157 @@ export default function PicksScreen() {
         onClose={() => setSelectedMatch(null)}
       />
     </SafeAreaView>
+  );
+}
+
+function GroupCard({
+  group,
+  order,
+  onOrderChange,
+  onDragStateChange,
+}: {
+  group: GroupStanding;
+  order: TeamInfo[];
+  onOrderChange: (groupId: string, orderedTeams: TeamInfo[]) => void;
+  onDragStateChange: (isDragging: boolean) => void;
+}) {
+  const moveTeam = (index: number, targetIndex: number) => {
+    if (targetIndex < 0 || targetIndex >= order.length || targetIndex === index) return;
+    const next = [...order];
+    const [team] = next.splice(index, 1);
+    next.splice(targetIndex, 0, team);
+    onOrderChange(group.id, next);
+  };
+
+  return (
+    <View style={styles.groupCard}>
+      <View style={styles.groupHeader}>
+        <Text style={styles.groupTitle}>Group {group.id}</Text>
+      </View>
+
+      {order.map((team, index) => {
+        const qualifies = index < 2;
+        const potentialQualifier = index === 2;
+
+        return (
+          <DraggableGroupTeamRow
+            key={team.code}
+            team={team}
+            index={index}
+            count={order.length}
+            qualifies={qualifies}
+            potentialQualifier={potentialQualifier}
+            onMove={moveTeam}
+            onDragStateChange={onDragStateChange}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+const GROUP_ROW_HEIGHT = 52;
+
+function DraggableGroupTeamRow({
+  team,
+  index,
+  count,
+  qualifies,
+  potentialQualifier,
+  onMove,
+  onDragStateChange,
+}: {
+  team: TeamInfo;
+  index: number;
+  count: number;
+  qualifies: boolean;
+  potentialQualifier: boolean;
+  onMove: (fromIndex: number, toIndex: number) => void;
+  onDragStateChange: (isDragging: boolean) => void;
+}) {
+  const translateY = React.useRef(new Animated.Value(0)).current;
+  const [isDragging, setIsDragging] = useState(false);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dy) > 2,
+        onPanResponderGrant: () => {
+          setIsDragging(true);
+          onDragStateChange(true);
+          translateY.setValue(0);
+        },
+        onPanResponderMove: (_event, gesture) => {
+          const minY = -index * GROUP_ROW_HEIGHT;
+          const maxY = (count - index - 1) * GROUP_ROW_HEIGHT;
+          translateY.setValue(Math.max(minY, Math.min(maxY, gesture.dy)));
+        },
+        onPanResponderRelease: (_event, gesture) => {
+          const offset = Math.round(gesture.dy / GROUP_ROW_HEIGHT);
+          const nextIndex = Math.max(0, Math.min(count - 1, index + offset));
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            speed: 22,
+            bounciness: 0,
+          }).start(() => {
+            setIsDragging(false);
+            onDragStateChange(false);
+            onMove(index, nextIndex);
+          });
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            speed: 22,
+            bounciness: 0,
+          }).start(() => {
+            setIsDragging(false);
+            onDragStateChange(false);
+          });
+        },
+      }),
+    [count, index, onDragStateChange, onMove, translateY],
+  );
+
+  return (
+    <Animated.View
+      style={[
+        styles.groupTeamRow,
+        index < count - 1 && styles.groupTeamBorder,
+        qualifies && styles.groupTeamQualifies,
+        potentialQualifier && styles.groupTeamPotential,
+        isDragging && styles.groupTeamDragging,
+        { transform: [{ translateY }] },
+      ]}
+    >
+      <Text
+        style={[
+          styles.positionLabel,
+          qualifies && styles.positionLabelQualifies,
+          potentialQualifier && styles.positionLabelPotential,
+        ]}
+      >
+        {index + 1}
+      </Text>
+      <Flag code={team.code} size={22} />
+      <Text
+        style={[
+          styles.groupTeamName,
+          !qualifies && !potentialQualifier && styles.groupTeamNameDim,
+        ]}
+        numberOfLines={1}
+      >
+        {team.name}
+      </Text>
+      <View style={styles.dragHandle} {...panResponder.panHandlers}>
+        <View style={styles.dragHandleLine} />
+        <View style={styles.dragHandleLine} />
+        <View style={styles.dragHandleLine} />
+      </View>
+    </Animated.View>
   );
 }
 
@@ -228,6 +468,94 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#fff' },
 
   matchGroups: { gap: 18 },
+  groupCards: { gap: 12 },
+  groupCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  groupHeader: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  groupTitle: {
+    color: colors.text,
+    fontFamily: fonts.displayBold,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  groupTeamRow: {
+    borderLeftWidth: 2,
+    borderLeftColor: 'transparent',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+  },
+  groupTeamQualifies: {
+    backgroundColor: 'rgba(0,168,126,0.04)',
+    borderLeftColor: 'rgba(0,168,126,0.35)',
+  },
+  groupTeamPotential: {
+    backgroundColor: 'rgba(73,79,223,0.06)',
+    borderLeftColor: 'rgba(73,79,223,0.24)',
+  },
+  groupTeamBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  positionLabel: {
+    color: colors.dim,
+    fontFamily: fonts.displayBold,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+    width: 24,
+  },
+  positionLabelQualifies: {
+    color: colors.accent,
+  },
+  positionLabelPotential: {
+    color: colors.blue,
+  },
+  groupTeamName: {
+    color: colors.text,
+    flex: 1,
+    fontFamily: fonts.displayBold,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  groupTeamNameDim: {
+    color: colors.muted,
+  },
+  groupTeamDragging: {
+    backgroundColor: colors.card2,
+    elevation: 2,
+    position: 'relative',
+    zIndex: 5,
+  },
+  dragHandle: {
+    alignItems: 'center',
+    borderRadius: 8,
+    gap: 3,
+    height: 30,
+    justifyContent: 'center',
+    width: 30,
+  },
+  dragHandleLine: {
+    backgroundColor: colors.dim,
+    borderRadius: 1,
+    height: 1.5,
+    width: 14,
+  },
   dayGroup: { gap: 8 },
   dayLabel: {
     color: colors.dim,

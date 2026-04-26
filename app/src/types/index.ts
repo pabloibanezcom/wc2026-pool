@@ -54,6 +54,14 @@ export interface Prediction {
   points: number | null;
 }
 
+export interface GroupPrediction {
+  _id: string;
+  userId: string;
+  group: string;
+  orderedTeams: TeamInfo[];
+  points: number | null;
+}
+
 export interface LeagueMember {
   userId: User;
   joinedAt: string;
