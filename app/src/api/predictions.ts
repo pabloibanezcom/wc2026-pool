@@ -1,5 +1,6 @@
 import { apiClient } from './client';
 import { GroupPrediction, Prediction, TeamInfo } from '../types';
+import { TournamentPicks } from '../data/tournamentData';
 
 function normalizePrediction(prediction: Prediction & { matchId: unknown }): Prediction {
   let normalizedMatchId = '';
@@ -43,4 +44,13 @@ export async function submitGroupPrediction(group: string, orderedTeams: TeamInf
     orderedTeams,
   });
   return data.prediction;
+}
+
+export async function fetchTournamentPrediction(): Promise<TournamentPicks> {
+  const { data } = await apiClient.get<{ prediction: TournamentPicks | null }>('/predictions/tournament');
+  return data.prediction ?? {};
+}
+
+export async function saveTournamentPrediction(picks: TournamentPicks): Promise<void> {
+  await apiClient.post('/predictions/tournament', picks);
 }

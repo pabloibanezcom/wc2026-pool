@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import {
   Animated,
   PanResponder,
-  Platform,
   View,
   Text,
   StyleSheet,
@@ -11,11 +10,12 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as SecureStore from 'expo-secure-store';
 import { fetchMatches } from '../api/matches';
 import {
   fetchMyGroupPredictions,
   fetchMyPredictions,
+  fetchTournamentPrediction,
+  saveTournamentPrediction,
   submitGroupPrediction,
   submitPrediction,
 } from '../api/predictions';
@@ -27,32 +27,6 @@ import Flag from '../components/ui/Flag';
 import TournamentPicksSection from '../components/TournamentPicksSection';
 import { TournamentPicks, PlayerOption, TeamOption } from '../data/tournamentData';
 import { colors, fonts } from '../theme';
-
-const TOURNAMENT_PICKS_KEY = 'wcp_tournament_picks';
-
-async function loadTournamentPicks(): Promise<TournamentPicks> {
-  try {
-    const raw = Platform.OS === 'web'
-      ? localStorage.getItem(TOURNAMENT_PICKS_KEY)
-      : await SecureStore.getItemAsync(TOURNAMENT_PICKS_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-async function saveTournamentPicks(picks: TournamentPicks): Promise<void> {
-  try {
-    const raw = JSON.stringify(picks);
-    if (Platform.OS === 'web') {
-      localStorage.setItem(TOURNAMENT_PICKS_KEY, raw);
-    } else {
-      await SecureStore.setItemAsync(TOURNAMENT_PICKS_KEY, raw);
-    }
-  } catch {
-    // silently fail
-  }
-}
 
 function getResult(pred: Prediction, match: Match): 'exact' | 'correct' | 'wrong' | null {
   if (!match.result) return null;
@@ -176,14 +150,14 @@ export default function PicksScreen() {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
-    loadTournamentPicks().then(setTournamentPicks);
+    fetchTournamentPrediction().then(setTournamentPicks).catch(() => {});
   }, []);
 
   const handleTournamentPick = useCallback(
     (key: keyof TournamentPicks, value: TeamOption | PlayerOption) => {
       setTournamentPicks((prev) => {
         const next = { ...prev, [key]: value };
-        saveTournamentPicks(next);
+        saveTournamentPrediction(next).catch(() => {});
         return next;
       });
     },

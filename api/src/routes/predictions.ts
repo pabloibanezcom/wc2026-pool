@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Match } from '../models/Match';
 import { Prediction } from '../models/Prediction';
 import { GroupPrediction } from '../models/GroupPrediction';
+import { TournamentPrediction } from '../models/TournamentPrediction';
 import { League } from '../models/League';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { ITeamInfo, MatchWinner } from '../models/Match';
@@ -203,6 +204,44 @@ router.get('/match/:matchId', authMiddleware, async (req: AuthRequest, res: Resp
 
   const predictions = await Prediction.find(filter).populate('userId', 'name avatarUrl').lean();
   res.json({ predictions });
+});
+
+const teamPickSchema = z.object({ name: z.string().min(1), code: z.string().min(1) }).optional();
+const playerPickSchema = z
+  .object({ name: z.string().min(1), team: z.string().min(1), code: z.string().min(1), pos: z.string().min(1) })
+  .optional();
+
+const tournamentPredictionSchema = z.object({
+  champion: teamPickSchema,
+  runnerUp: teamPickSchema,
+  semi1: teamPickSchema,
+  semi2: teamPickSchema,
+  bestPlayer: playerPickSchema,
+  topScorer: playerPickSchema,
+  bestYoung: playerPickSchema,
+});
+
+router.get('/tournament', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const doc = await TournamentPrediction.findOne({ userId: req.userId }).lean();
+  res.json({ prediction: doc ?? null });
+});
+
+router.post('/tournament', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = tournamentPredictionSchema.parse(req.body);
+    const doc = await TournamentPrediction.findOneAndUpdate(
+      { userId: req.userId },
+      { $set: data },
+      { upsert: true, new: true }
+    ).lean();
+    res.json({ prediction: doc });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors });
+      return;
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 export default router;
