@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Animated,
   PanResponder,
@@ -70,6 +70,9 @@ interface GroupStanding {
   teams: TeamInfo[];
 }
 
+const PICK_TABS = ['upcoming', 'results', 'groups'] as const;
+type PicksTab = typeof PICK_TABS[number];
+
 function isTbdTeam(team: TeamInfo) {
   return team.code.trim().toUpperCase() === 'TBD' || team.name.trim().toUpperCase() === 'TBD';
 }
@@ -100,7 +103,10 @@ function getGroupsFromMatches(matches: Match[]): GroupStanding[] {
 }
 
 export default function PicksScreen() {
-  const [tab, setTab] = useState<'upcoming' | 'results' | 'groups'>('upcoming');
+  const scrollRef = useRef<ScrollView>(null);
+  const tabAnimation = useRef(new Animated.Value(0)).current;
+  const [tab, setTab] = useState<PicksTab>('upcoming');
+  const [tabBarWidth, setTabBarWidth] = useState(0);
   const [matches, setMatches] = useState<Match[]>([]);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [groupPredictions, setGroupPredictions] = useState<GroupPrediction[]>([]);
@@ -136,6 +142,22 @@ export default function PicksScreen() {
   }, []);
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    Animated.spring(tabAnimation, {
+      toValue: PICK_TABS.indexOf(tab),
+      useNativeDriver: true,
+      speed: 22,
+      bounciness: 4,
+    }).start();
+  }, [tab, tabAnimation]);
+
+  const tabIndicatorWidth = tabBarWidth > 0 ? (tabBarWidth - 8) / PICK_TABS.length : 0;
+  const tabIndicatorTranslate = tabAnimation.interpolate({
+    inputRange: PICK_TABS.map((_, index) => index),
+    outputRange: PICK_TABS.map((_, index) => index * tabIndicatorWidth),
+  });
 
   const upcoming = useMemo(
     () => matches.filter((m) => m.status === 'SCHEDULED' || m.status === 'LIVE'),
@@ -192,22 +214,31 @@ export default function PicksScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        scrollEnabled={!isDraggingGroupTeam}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
-      >
+      <View style={styles.fixedHeader}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>My Picks</Text>
           <Text style={styles.subtitle}>2026 FIFA World Cup · Group Stage</Text>
         </View>
 
-        {/* Tabs */}
-        <View style={styles.tabBar}>
-          {(['upcoming', 'results', 'groups'] as const).map((t) => {
+        <View
+          style={styles.tabBar}
+          onLayout={(event) => setTabBarWidth(event.nativeEvent.layout.width)}
+        >
+          {tabIndicatorWidth > 0 && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.tabIndicator,
+                {
+                  width: tabIndicatorWidth,
+                  transform: [{ translateX: tabIndicatorTranslate }],
+                },
+              ]}
+            />
+          )}
+
+          {PICK_TABS.map((t) => {
             const active = tab === t;
-            const count = t === 'upcoming' ? upcoming.length : t === 'results' ? finished.length : groupStandings.length;
             return (
               <TouchableOpacity
                 key={t}
@@ -215,13 +246,21 @@ export default function PicksScreen() {
                 onPress={() => setTab(t)}
               >
                 <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                  {t === 'upcoming' ? `Upcoming (${count})` : t === 'results' ? `Results (${count})` : `Groups (${count})`}
+                  {t === 'upcoming' ? 'Upcoming' : t === 'results' ? 'Results' : 'Groups'}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
+      </View>
 
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.scroll}
+        scrollEnabled={!isDraggingGroupTeam}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+      >
         {tab === 'groups' ? (
           <View style={styles.groupCards}>
             {groupStandings.map((group) => (
@@ -443,7 +482,13 @@ function DraggableGroupTeamRow({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: 18, paddingBottom: 16, gap: 16 },
+  fixedHeader: {
+    backgroundColor: colors.bg,
+    gap: 16,
+    padding: 18,
+    paddingBottom: 14,
+  },
+  scroll: { padding: 18, paddingBottom: 16, paddingTop: 14, gap: 16 },
 
   titleRow: { marginTop: 4 },
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.display },
@@ -453,17 +498,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.card,
     borderRadius: 10,
-    padding: 4,
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: 'hidden',
+    padding: 4,
+    position: 'relative',
+  },
+  tabIndicator: {
+    backgroundColor: colors.accent,
+    borderRadius: 8,
+    bottom: 4,
+    left: 4,
+    position: 'absolute',
+    top: 4,
   },
   tab: {
     flex: 1,
     paddingVertical: 9,
     borderRadius: 8,
     alignItems: 'center',
+    zIndex: 1,
   },
-  tabActive: { backgroundColor: colors.accent },
+  tabActive: {},
   tabText: { color: colors.muted, fontSize: 13, fontWeight: '600', fontFamily: fonts.bodyMedium },
   tabTextActive: { color: '#fff' },
 
