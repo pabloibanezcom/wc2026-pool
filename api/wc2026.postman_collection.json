@@ -218,6 +218,37 @@
               ]
             }
           }
+        },
+        {
+          "name": "Get My Tournament Prediction",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{wc2026_token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/predictions/tournament",
+              "host": ["{{baseUrl}}"],
+              "path": ["predictions", "tournament"]
+            }
+          }
+        },
+        {
+          "name": "Save Tournament Prediction",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{wc2026_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/predictions/tournament",
+              "host": ["{{baseUrl}}"],
+              "path": ["predictions", "tournament"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"champion\": { \"name\": \"Brazil\", \"code\": \"BRA\" },\n  \"runnerUp\": { \"name\": \"France\", \"code\": \"FRA\" },\n  \"semi1\": { \"name\": \"Argentina\", \"code\": \"ARG\" },\n  \"semi2\": { \"name\": \"Germany\", \"code\": \"GER\" },\n  \"bestPlayer\": { \"name\": \"Lionel Messi\", \"team\": \"Argentina\", \"code\": \"ARG\", \"pos\": \"FW\" },\n  \"topScorer\": { \"name\": \"Kylian Mbappé\", \"team\": \"France\", \"code\": \"FRA\", \"pos\": \"FW\" },\n  \"bestYoung\": { \"name\": \"Lamine Yamal\", \"team\": \"Spain\", \"code\": \"ESP\", \"pos\": \"FW\" }\n}"
+            }
+          }
         }
       ]
     },
@@ -315,6 +346,18 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"title\": \"League update\",\n  \"body\": \"Your message here\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Member Predictions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{wc2026_token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/members/{{memberUserId}}/predictions",
+              "host": ["{{baseUrl}}"],
+              "path": ["leagues", "{{leagueId}}", "members", "{{memberUserId}}", "predictions"]
             }
           }
         }
