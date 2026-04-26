@@ -302,6 +302,21 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{wc2026_token}}" }],
             "url": { "raw": "{{baseUrl}}/leagues/{{leagueId}}/leave", "host": ["{{baseUrl}}"], "path": ["leagues", "{{leagueId}}", "leave"] }
           }
+        },
+        {
+          "name": "Notify League Members (Admin only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{wc2026_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/leagues/{{leagueId}}/notify", "host": ["{{baseUrl}}"], "path": ["leagues", "{{leagueId}}", "notify"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"League update\",\n  \"body\": \"Your message here\"\n}"
+            }
+          }
         }
       ]
     },
@@ -354,6 +369,21 @@
               { "key": "Authorization", "value": "Bearer {{wc2026_token}}" }
             ],
             "url": { "raw": "{{baseUrl}}/notifications/test", "host": ["{{baseUrl}}"], "path": ["notifications", "test"] }
+          }
+        },
+        {
+          "name": "Broadcast to All (Master only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{wc2026_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/notifications/broadcast", "host": ["{{baseUrl}}"], "path": ["notifications", "broadcast"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Announcement\",\n  \"body\": \"Your message here\"\n}"
+            }
           }
         }
       ]
