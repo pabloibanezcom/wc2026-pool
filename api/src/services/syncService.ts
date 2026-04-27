@@ -49,6 +49,7 @@ export async function processFinishedMatches(): Promise<{
         actualHome: match.result.homeGoals,
         actualAway: match.result.awayGoals,
         stage: match.stage as MatchStage,
+        odds: match.odds,
       });
 
       prediction.points = points;

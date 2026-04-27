@@ -1,4 +1,4 @@
-import { MatchStage } from '../models/Match';
+import { IMatchOdds, MatchStage } from '../models/Match';
 
 const STAGE_MULTIPLIERS: Record<MatchStage, number> = {
   GROUP: 1,
@@ -16,10 +16,19 @@ export interface ScoreInput {
   actualHome: number;
   actualAway: number;
   stage: MatchStage;
+  odds?: IMatchOdds | null;
+}
+
+// Converts decimal odds into an upset multiplier.
+// Heavy favourites (odds ≤ 2) → 1.0 (no bonus).
+// Underdogs (odds > 2) → up to 4.0.
+function oddsMultiplier(odds: number | null | undefined): number {
+  if (!odds || odds <= 0) return 1.0;
+  return Math.max(1.0, Math.min(odds / 2, 4.0));
 }
 
 export function calculatePoints(input: ScoreInput): number {
-  const { predictedHome, predictedAway, actualHome, actualAway, stage } = input;
+  const { predictedHome, predictedAway, actualHome, actualAway, stage, odds } = input;
 
   const predictedDiff = predictedHome - predictedAway;
   const actualDiff = actualHome - actualAway;
@@ -40,5 +49,15 @@ export function calculatePoints(input: ScoreInput): number {
     }
   }
 
-  return Math.round(base * STAGE_MULTIPLIERS[stage]);
+  if (base === 0) return 0;
+
+  // Apply odds multiplier based on the actual outcome's pre-match odds
+  let outcomeOdds: number | null = null;
+  if (odds) {
+    if (actualOutcome > 0) outcomeOdds = odds.home;
+    else if (actualOutcome < 0) outcomeOdds = odds.away;
+    else outcomeOdds = odds.draw;
+  }
+
+  return Math.round(base * STAGE_MULTIPLIERS[stage] * oddsMultiplier(outcomeOdds));
 }

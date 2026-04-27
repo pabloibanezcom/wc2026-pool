@@ -4,19 +4,21 @@ import { env } from '../config/env';
 import { logger } from '../config/logger';
 import { syncAuthMiddleware } from '../middleware/syncAuth';
 import { processFinishedMatches, syncAllFixtures } from '../services/syncService';
+import { syncOdds } from '../services/oddsService';
 
 const router = Router();
 
 const syncSchema = z.object({
   syncFixtures: z.boolean().default(true),
   processResults: z.boolean().default(true),
+  syncOdds: z.boolean().default(false),
 });
 
 router.post('/sync', syncAuthMiddleware, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { syncFixtures, processResults } = syncSchema.parse(req.body ?? {});
+    const { syncFixtures, processResults, syncOdds: doSyncOdds } = syncSchema.parse(req.body ?? {});
 
-    if (!syncFixtures && !processResults) {
+    if (!syncFixtures && !processResults && !doSyncOdds) {
       res.status(400).json({ error: 'At least one sync action must be enabled' });
       return;
     }
@@ -26,19 +28,28 @@ router.post('/sync', syncAuthMiddleware, async (req: Request, res: Response, nex
       return;
     }
 
-    logger.info({ syncFixtures, processResults }, 'Running manual sync');
+    if (doSyncOdds && !env.ODDS_API_KEY) {
+      res.status(503).json({ error: 'ODDS_API_KEY is not configured on the server' });
+      return;
+    }
+
+    logger.info({ syncFixtures, processResults, syncOdds: doSyncOdds }, 'Running manual sync');
 
     const fixtureResult = syncFixtures ? await syncAllFixtures() : { fixturesSynced: 0 };
     const scoringResult = processResults
       ? await processFinishedMatches()
       : { matchesProcessed: 0, predictionsScored: 0, leaguesUpdated: 0 };
+    const oddsResult = doSyncOdds ? await syncOdds() : { matchesUpdated: 0, requestsRemaining: null };
 
     res.json({
       ok: true,
       syncFixtures,
       processResults,
+      syncOdds: doSyncOdds,
       ...fixtureResult,
       ...scoringResult,
+      oddsMatchesUpdated: oddsResult.matchesUpdated,
+      oddsRequestsRemaining: oddsResult.requestsRemaining,
       ranAt: new Date().toISOString(),
     });
   } catch (error) {

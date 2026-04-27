@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { syncAllFixtures, processFinishedMatches } from '../services/syncService';
+import { syncOdds } from '../services/oddsService';
 import { logger } from '../config/logger';
 import { Match } from '../models/Match';
 import { sendToAll } from '../services/pushService';
@@ -22,6 +23,16 @@ export function startSyncJobs(): void {
       await syncAllFixtures();
     } catch (error) {
       logger.error({ err: error }, 'Daily sync failed');
+    }
+  });
+
+  // Daily at 7 AM UTC — odds sync (1 API call covers all upcoming matches)
+  cron.schedule('0 7 * * *', async () => {
+    try {
+      const result = await syncOdds();
+      logger.info(result, 'Daily odds sync complete');
+    } catch (error) {
+      logger.error({ err: error }, 'Daily odds sync failed');
     }
   });
 

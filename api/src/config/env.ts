@@ -24,6 +24,8 @@ const envSchema = z.object({
   MASTER_USER_EMAIL: z.string().default(''),
   GOOGLE_CLIENT_ID: z.string().default(''),
   FOOTBALL_DATA_API_KEY: z.string().default(''),
+  ODDS_API_KEY: z.string().default(''),
+  ODDS_API_SPORT_KEY: z.string().default('soccer_fifa_world_cup'),
   SYNC_API_KEY: z.string().default(''),
   VAPID_PUBLIC_KEY: z.string().default(''),
   VAPID_PRIVATE_KEY: z.string().default(''),

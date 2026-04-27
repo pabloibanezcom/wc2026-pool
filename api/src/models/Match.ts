@@ -24,6 +24,13 @@ export interface IMatchResult {
   winner: MatchWinner;
 }
 
+export interface IMatchOdds {
+  home: number | null;
+  draw: number | null;
+  away: number | null;
+  fetchedAt: Date;
+}
+
 export interface IMatch extends Document {
   externalId: number;
   stage: MatchStage;
@@ -36,6 +43,7 @@ export interface IMatch extends Document {
   utcDate: Date;
   status: MatchStatus;
   result: IMatchResult | null;
+  odds: IMatchOdds | null;
   scoresProcessed: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -80,6 +88,18 @@ const matchSchema = new Schema<IMatch>(
       default: 'SCHEDULED',
     },
     result: { type: matchResultSchema, default: null },
+    odds: {
+      type: new Schema<IMatchOdds>(
+        {
+          home: { type: Number, default: null },
+          draw: { type: Number, default: null },
+          away: { type: Number, default: null },
+          fetchedAt: { type: Date, required: true },
+        },
+        { _id: false }
+      ),
+      default: null,
+    },
     scoresProcessed: { type: Boolean, default: false },
   },
   { timestamps: true }
