@@ -93,7 +93,7 @@ describe('misc app and auth routes', () => {
       body: { idToken: 'valid-google-token' },
     });
     expect(linked.status).toBe(200);
-    expect(linked.body.user).toMatchObject({ email: 'player@wc2026.test', name: 'Linked Player' });
+    expect(linked.body.user).toMatchObject({ email: 'player@wc2026.test', name: 'Password Player' });
 
     googleMocks.verifyIdToken.mockRejectedValueOnce(new Error('invalid token'));
     const failed = await requestJson('/auth/google', {
@@ -101,5 +101,43 @@ describe('misc app and auth routes', () => {
     });
     expect(failed.status).toBe(401);
     expect(failed.body).toEqual({ error: 'Authentication failed' });
+  });
+
+  it('does not overwrite a custom display name on later Google login', async () => {
+    googleMocks.verifyIdToken.mockResolvedValueOnce({
+      getPayload: () => ({
+        sub: 'google-user-003',
+        email: 'google-name@wc2026.test',
+        name: 'Very Long Google Account Name',
+        picture: '',
+      }),
+    });
+    const firstLogin = await requestJson<{ token: string; user: { name: string } }>('/auth/google', {
+      body: { idToken: 'first-token' },
+    });
+    expect(firstLogin.body.user.name).toBe('Very Long Google Account Name');
+
+    const update = await requestJson<{ user: { name: string } }>('/auth/me', {
+      method: 'PATCH',
+      token: firstLogin.body.token,
+      body: { name: 'Pablo' },
+    });
+    expect(update.status).toBe(200);
+    expect(update.body.user.name).toBe('Pablo');
+
+    googleMocks.verifyIdToken.mockResolvedValueOnce({
+      getPayload: () => ({
+        sub: 'google-user-003',
+        email: 'google-name@wc2026.test',
+        name: 'Very Long Google Account Name',
+        picture: '',
+      }),
+    });
+    const secondLogin = await requestJson<{ user: { name: string } }>('/auth/google', {
+      body: { idToken: 'second-token' },
+    });
+
+    expect(secondLogin.status).toBe(200);
+    expect(secondLogin.body.user.name).toBe('Pablo');
   });
 });

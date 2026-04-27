@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { getToken, setToken, deleteToken } from './tokenStorage';
 import { TOKEN_STORAGE_KEY } from './tokenKey';
 import { User } from '../types';
-import { loginWithGoogle, loginWithPassword, loginDev, getMe } from '../api/auth';
+import { loginWithGoogle, loginWithPassword, loginDev, getMe, updateMe } from '../api/auth';
 
 interface AuthState {
   user: User | null;
@@ -12,6 +12,7 @@ interface AuthState {
   signInWithGoogle: (idToken: string) => Promise<void>;
   signInDev: () => Promise<void>;
   restoreSession: () => Promise<void>;
+  updateProfileName: (name: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -51,6 +52,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       await deleteToken(TOKEN_STORAGE_KEY);
       set({ user: null, token: null, isLoading: false });
     }
+  },
+
+  updateProfileName: async (name: string) => {
+    const user = await updateMe(name);
+    set({ user });
   },
 
   signOut: async () => {

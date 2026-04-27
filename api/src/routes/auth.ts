@@ -25,6 +25,10 @@ const googleAuthSchema = z.object({
   idToken: z.string().min(1),
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+});
+
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -167,7 +171,7 @@ router.post('/google', async (req, res: Response): Promise<void> => {
     } else {
       user.googleId = payload.sub;
       user.email = normalizedEmail;
-      user.name = payload.name || user.name || normalizedEmail;
+      user.name = user.name || payload.name || normalizedEmail;
       user.avatarUrl = payload.picture || user.avatarUrl || '';
       user.isMaster = user.isMaster || isMasterEmail(normalizedEmail);
       await user.save();
@@ -213,6 +217,26 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promi
   user.isMaster = user.isMaster || isMasterEmail(user.email);
   await user.save();
   res.json({ user: serializeUser(user) });
+});
+
+router.patch('/me', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { name } = updateProfileSchema.parse(req.body);
+    const user = await User.findByIdAndUpdate(req.userId, { name }, { new: true }).select('-__v');
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    res.json({ user: serializeUser(user) });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Invalid profile data', details: error.errors });
+      return;
+    }
+    throw error;
+  }
 });
 
 export default router;

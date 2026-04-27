@@ -95,4 +95,30 @@ describe('auth routes', () => {
     expect(invalid.status).toBe(401);
     expect(invalid.body).toEqual({ error: 'Invalid or expired token' });
   });
+
+  it('updates the authenticated user display name', async () => {
+    const register = await requestJson<{ token: string; user: { id: string } }>('/auth/register', {
+      body: {
+        email: 'player@wc2026.test',
+        name: 'Long Original Name',
+        password: 'valid-password',
+      },
+    });
+
+    const updated = await requestJson<{ user: { id: string; name: string } }>('/auth/me', {
+      method: 'PATCH',
+      token: register.body.token,
+      body: { name: 'Pablo' },
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body.user).toMatchObject({ id: register.body.user.id, name: 'Pablo' });
+
+    const invalid = await requestJson('/auth/me', {
+      method: 'PATCH',
+      token: register.body.token,
+      body: { name: '' },
+    });
+    expect(invalid.status).toBe(400);
+    expect(invalid.body).toMatchObject({ error: 'Invalid profile data' });
+  });
 });

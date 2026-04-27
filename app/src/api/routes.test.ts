@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { getMe, loginDev, loginWithGoogle, loginWithPassword } from './auth';
+import { getMe, loginDev, loginWithGoogle, loginWithPassword, updateMe } from './auth';
 import { createLeague, fetchLeague, fetchMemberPredictions, fetchMyLeagues, joinLeague, leaveLeague, notifyLeagueMembers } from './leagues';
 import { fetchMatch, fetchMatches } from './matches';
 import { apiClient } from './client';
@@ -8,6 +8,7 @@ vi.mock('./client', () => ({
   apiClient: {
     get: vi.fn(),
     post: vi.fn(),
+    patch: vi.fn(),
     delete: vi.fn(),
   },
 }));
@@ -15,6 +16,7 @@ vi.mock('./client', () => ({
 const mockedApiClient = {
   get: apiClient.get as Mock,
   post: apiClient.post as Mock,
+  patch: apiClient.patch as Mock,
   delete: apiClient.delete as Mock,
 };
 
@@ -43,6 +45,10 @@ describe('API route helpers', () => {
     mockedApiClient.get.mockResolvedValueOnce({ data: { user: authResponse.user } });
     await expect(getMe()).resolves.toBe(authResponse.user);
     expect(mockedApiClient.get).toHaveBeenCalledWith('/auth/me');
+
+    mockedApiClient.patch.mockResolvedValueOnce({ data: { user: { ...authResponse.user, name: 'Pablo' } } });
+    await expect(updateMe('Pablo')).resolves.toMatchObject({ name: 'Pablo' });
+    expect(mockedApiClient.patch).toHaveBeenCalledWith('/auth/me', { name: 'Pablo' });
   });
 
   it('calls match endpoints with the expected route and params', async () => {

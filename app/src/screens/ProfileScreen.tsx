@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Switch,
   Image,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
@@ -37,10 +39,15 @@ export default function ProfileScreen() {
   const { language, setLanguage, t } = useI18n();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const updateProfileName = useAuthStore((s) => s.updateProfileName);
   const [league, setLeague] = useState<League | null>(null);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const { isSubscribed, loading: pushLoading, subscribe, unsubscribe, isSupported: pushSupported } = usePushNotifications();
   const [notifyModalVisible, setNotifyModalVisible] = useState(false);
+  const [editNameVisible, setEditNameVisible] = useState(false);
+  const [displayName, setDisplayName] = useState(user?.name ?? '');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     Promise.all([fetchMyLeagues(), fetchMyPredictions()])
@@ -65,12 +72,39 @@ export default function ProfileScreen() {
     : '—';
 
   const accountItems = [
-    { label: t('profile.editProfile'), value: '' },
+    { label: t('profile.editProfile'), value: '', onPress: () => {
+      setDisplayName(user?.name ?? '');
+      setNameError(null);
+      setEditNameVisible(true);
+    } },
     { label: t('profile.signOut'), value: '', danger: true, onPress: signOut },
   ];
 
   const handleBroadcast = async (title: string, body: string) => {
     await apiClient.post('/notifications/broadcast', { title, body });
+  };
+
+  const handleSaveName = async () => {
+    const trimmed = displayName.trim();
+    if (!trimmed) {
+      setNameError(t('profile.nameRequired'));
+      return;
+    }
+    if (trimmed.length > 40) {
+      setNameError(t('profile.nameTooLong'));
+      return;
+    }
+
+    setSavingName(true);
+    setNameError(null);
+    try {
+      await updateProfileName(trimmed);
+      setEditNameVisible(false);
+    } catch {
+      setNameError(t('profile.nameUpdateFailed'));
+    } finally {
+      setSavingName(false);
+    }
   };
 
   return (
@@ -206,6 +240,46 @@ export default function ProfileScreen() {
         onClose={() => setNotifyModalVisible(false)}
         onSend={handleBroadcast}
       />
+
+      <Modal
+        visible={editNameVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditNameVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('profile.displayName')}</Text>
+            <TextInput
+              autoCapitalize="words"
+              autoCorrect={false}
+              maxLength={40}
+              placeholder={t('profile.displayNamePlaceholder')}
+              placeholderTextColor={colors.dim}
+              style={styles.input}
+              value={displayName}
+              onChangeText={setDisplayName}
+            />
+            {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setEditNameVisible(false)}
+                disabled={savingName}
+              >
+                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton, savingName && styles.disabledButton]}
+                onPress={handleSaveName}
+                disabled={savingName}
+              >
+                <Text style={styles.saveButtonText}>{t('profile.saveName')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -222,6 +296,75 @@ const styles = StyleSheet.create({
   tags: { flexDirection: 'row', gap: 8 },
   tag: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   tagText: { fontSize: 10, fontWeight: '600' },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+    gap: 12,
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: 20,
+    fontFamily: fonts.displayBold,
+    fontWeight: '700',
+  },
+  input: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: colors.text,
+    fontSize: 15,
+    fontFamily: fonts.body,
+  },
+  errorText: {
+    color: colors.danger,
+    fontSize: 12,
+    fontFamily: fonts.body,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 4,
+  },
+  modalButton: {
+    minHeight: 44,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  saveButton: {
+    backgroundColor: colors.accent,
+  },
+  disabledButton: {
+    opacity: 0.7,
+  },
+  cancelButtonText: {
+    color: colors.text,
+    fontFamily: fonts.bodyMedium,
+    fontWeight: '700',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontFamily: fonts.bodyMedium,
+    fontWeight: '700',
+  },
 
   statsRow: { flexDirection: 'row', gap: 10 },
   statCard: {

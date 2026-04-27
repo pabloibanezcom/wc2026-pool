@@ -25,3 +25,8 @@ export async function getMe(): Promise<User> {
   const { data } = await apiClient.get<{ user: User }>('/auth/me');
   return data.user;
 }
+
+export async function updateMe(name: string): Promise<User> {
+  const { data } = await apiClient.patch<{ user: User }>('/auth/me', { name });
+  return data.user;
+}

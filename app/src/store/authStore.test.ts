@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from './authStore';
 import { TOKEN_STORAGE_KEY } from './tokenKey';
 import { deleteToken, getToken, setToken } from './tokenStorage';
-import { getMe, loginDev, loginWithGoogle, loginWithPassword } from '../api/auth';
+import { getMe, loginDev, loginWithGoogle, loginWithPassword, updateMe } from '../api/auth';
 
 vi.mock('./tokenStorage', () => ({
   getToken: vi.fn(),
@@ -15,6 +15,7 @@ vi.mock('../api/auth', () => ({
   loginWithGoogle: vi.fn(),
   loginDev: vi.fn(),
   getMe: vi.fn(),
+  updateMe: vi.fn(),
 }));
 
 const mockedGetToken = vi.mocked(getToken);
@@ -24,6 +25,7 @@ const mockedLoginWithPassword = vi.mocked(loginWithPassword);
 const mockedLoginWithGoogle = vi.mocked(loginWithGoogle);
 const mockedLoginDev = vi.mocked(loginDev);
 const mockedGetMe = vi.mocked(getMe);
+const mockedUpdateMe = vi.mocked(updateMe);
 
 const user = {
   id: 'user-1',
@@ -106,5 +108,15 @@ describe('auth store', () => {
 
     expect(mockedDeleteToken).toHaveBeenCalledWith(TOKEN_STORAGE_KEY);
     expect(useAuthStore.getState()).toMatchObject({ user: null, token: null, isLoading: false });
+  });
+
+  it('updates the current user display name', async () => {
+    useAuthStore.setState({ user, token: 'token-1', isLoading: false });
+    mockedUpdateMe.mockResolvedValueOnce({ ...user, name: 'Pablo' });
+
+    await useAuthStore.getState().updateProfileName('Pablo');
+
+    expect(mockedUpdateMe).toHaveBeenCalledWith('Pablo');
+    expect(useAuthStore.getState().user).toMatchObject({ name: 'Pablo' });
   });
 });
