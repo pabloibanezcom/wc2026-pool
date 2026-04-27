@@ -160,9 +160,8 @@ async function seedOdds(): Promise<void> {
   await connectDB();
 
   const matches = await Match.find({
-    $or: [
-      { status: { $in: ['SCHEDULED', 'LIVE', 'FINISHED'] }, odds: null },
-    ],
+    status: { $in: ['SCHEDULED', 'LIVE', 'FINISHED'] },
+    odds: null,
   });
 
   if (matches.length === 0) {
@@ -172,8 +171,10 @@ async function seedOdds(): Promise<void> {
 
   for (const match of matches) {
     const odds = generateOdds(match.homeTeamCode, match.awayTeamCode);
-    match.odds = { ...odds, fetchedAt: new Date() };
-    await match.save();
+    await Match.updateOne(
+      { _id: match._id },
+      { $set: { odds: { ...odds, fetchedAt: new Date() } } }
+    );
     logger.info(
       { home: match.homeTeamCode, away: match.awayTeamCode, odds },
       'Seeded odds'
