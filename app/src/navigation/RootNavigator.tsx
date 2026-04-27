@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore';
 import { colors, fonts } from '../theme';
 
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import LeaguesScreen from '../screens/LeaguesScreen';
 import PicksScreen from '../screens/PicksScreen';
@@ -134,7 +135,10 @@ export default function RootNavigator() {
             />
           </>
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

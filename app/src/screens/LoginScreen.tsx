@@ -11,6 +11,8 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '../store/authStore';
@@ -18,12 +20,18 @@ import { colors, spacing, borderRadius } from '../theme';
 import { useI18n } from '../i18n';
 import { getGoogleClientIds, getGoogleIdToken, hasGoogleClientIdForPlatform } from '../auth/googleConfig';
 
+type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+};
+
 WebBrowser.maybeCompleteAuthSession();
 
 const googleClientIds = getGoogleClientIds();
 
 export default function LoginScreen() {
   const { t } = useI18n();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const signInWithPassword = useAuthStore((s) => s.signInWithPassword);
   const [isSigningIn, setIsSigningIn] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -133,6 +141,10 @@ export default function LoginScreen() {
               <Text style={[styles.googleBtnText, { color: '#666' }]}>{t('login.googleNotConfigured')}</Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity style={styles.registerLink} onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.registerLinkText}>{t('login.createAccount')}</Text>
+          </TouchableOpacity>
+
           <Text style={styles.fine}>
             {t('login.finePrint')}
           </Text>
@@ -338,5 +350,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
     lineHeight: 17,
+  },
+  registerLink: {
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  registerLinkText: {
+    color: colors.accent,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
