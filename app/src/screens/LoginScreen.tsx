@@ -16,10 +16,11 @@ import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '../store/authStore';
 import { colors, spacing, borderRadius } from '../theme';
 import { useI18n } from '../i18n';
+import { getGoogleClientIds, getGoogleIdToken, hasGoogleClientIdForPlatform } from '../auth/googleConfig';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const hasGoogleConfig = !!process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const googleClientIds = getGoogleClientIds();
 
 export default function LoginScreen() {
   const { t } = useI18n();
@@ -125,7 +126,7 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {hasGoogleConfig ? (
+          {hasGoogleClientIdForPlatform(googleClientIds) ? (
             <GoogleLoginButton isSigningIn={isSigningIn} setIsSigningIn={setIsSigningIn} setError={setError} />
           ) : (
             <TouchableOpacity style={[styles.googleBtn, styles.googleBtnDisabled]} disabled>
@@ -156,18 +157,19 @@ function GoogleLoginButton({
   const { t } = useI18n();
   const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
 
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-  });
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest(googleClientIds);
 
   useEffect(() => {
     if (response?.type === 'success') {
-      const { id_token } = response.params;
+      const idToken = getGoogleIdToken(response);
+      if (!idToken) {
+        setError(t('login.signInFailed'));
+        return;
+      }
+
       setIsSigningIn(true);
       setError(null);
-      signInWithGoogle(id_token)
+      signInWithGoogle(idToken)
         .catch(() => setError(t('login.signInFailed')))
         .finally(() => setIsSigningIn(false));
     }
