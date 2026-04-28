@@ -237,7 +237,7 @@ function TeamPickerModal({
   );
 }
 
-// ─── PLAYER PICKER MODAL ───────────────────────────────────────
+// ─── PLAYER PICKER MODAL (two-step: country → player) ─────────
 function PlayerPickerModal({
   title,
   players,
@@ -254,13 +254,29 @@ function PlayerPickerModal({
   const { language, t } = useI18n();
   const slideAnim = useRef(new Animated.Value(600)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [step, setStep] = useState<'team' | 'player'>('team');
+  const [selectedTeam, setSelectedTeam] = useState<{ name: string; code: string } | null>(null);
   const [search, setSearch] = useState('');
+
+  // Unique teams from the player list, sorted alphabetically
+  const teams = React.useMemo(() => {
+    const seen = new Map<string, { name: string; code: string }>();
+    players.forEach((p) => {
+      if (!seen.has(p.code)) seen.set(p.code, { name: getTeamNameByCode(p.code, p.team, language), code: p.code });
+    });
+    return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [players, language]);
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(slideAnim, { toValue: 0, duration: 280, useNativeDriver: true }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
     ]).start();
+    // Pre-select team if a player is already picked
+    if (selected) {
+      const match = teams.find((tm) => tm.code === selected.code);
+      if (match) { setSelectedTeam(match); setStep('player'); }
+    }
   }, []);
 
   const close = () => {
@@ -270,16 +286,24 @@ function PlayerPickerModal({
     ]).start(() => onClose());
   };
 
-  const pick = (player: PlayerOption) => {
-    onSelect(player);
-    close();
+  const pick = (player: PlayerOption) => { onSelect(player); close(); };
+
+  const goBack = () => { setStep('team'); setSearch(''); setSelectedTeam(null); };
+
+  const selectTeam = (team: { name: string; code: string }) => {
+    setSelectedTeam(team);
+    setStep('player');
+    setSearch('');
   };
 
-  const filtered = players.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      `${p.team} ${getTeamNameByCode(p.code, p.team, language)}`.toLowerCase().includes(search.toLowerCase())
+  const filteredTeams = teams.filter((tm) =>
+    tm.name.toLowerCase().includes(search.toLowerCase())
   );
+  const filteredPlayers = selectedTeam
+    ? players
+        .filter((p) => p.code === selectedTeam.code)
+        .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    : [];
 
   return (
     <Modal transparent visible animationType="none" onRequestClose={close}>
@@ -288,16 +312,43 @@ function PlayerPickerModal({
       </Animated.View>
       <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
         <View style={styles.sheetHandle} />
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>{title}</Text>
+
+        {/* Header */}
+        <View style={styles.playerSheetHeader}>
+          {step === 'player' && (
+            <TouchableOpacity onPress={goBack} style={styles.backButton} activeOpacity={0.7}>
+              <Ionicons name="chevron-back" size={20} color={colors.muted} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.playerSheetHeaderText}>
+            {step === 'team' ? (
+              <Text style={styles.sheetTitle}>{title}</Text>
+            ) : (
+              <View style={styles.teamHeaderRow}>
+                <Flag code={selectedTeam!.code} size={22} />
+                <Text style={styles.sheetTitle}>{selectedTeam!.name}</Text>
+              </View>
+            )}
+            <Text style={styles.sheetSubtitle}>
+              {step === 'team' ? t('tournament.selectCountry') : t('tournament.searchPlayer')}
+            </Text>
+          </View>
+          {/* Step dots */}
+          <View style={styles.stepDots}>
+            <View style={[styles.stepDot, step === 'team' && styles.stepDotActive]} />
+            <View style={[styles.stepDot, step === 'player' && styles.stepDotActive]} />
+          </View>
         </View>
+
+        {/* Search */}
         <View style={styles.searchBar}>
           <Ionicons name="search" size={14} color={colors.dim} />
           <TextInput
+            key={step}
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder={t('tournament.searchPlayerTeam')}
+            placeholder={step === 'team' ? t('tournament.searchTeam') : t('tournament.searchPlayer')}
             placeholderTextColor={colors.dim}
             autoCorrect={false}
           />
@@ -307,34 +358,63 @@ function PlayerPickerModal({
             </TouchableOpacity>
           )}
         </View>
-        <ScrollView style={styles.sheetList} showsVerticalScrollIndicator={false}>
-          {filtered.map((player, i) => {
-            const isSel = selected?.name === player.name;
-            return (
-              <TouchableOpacity
-                key={i}
-                style={[styles.teamRow, isSel && styles.teamRowSelected]}
-                onPress={() => pick(player)}
-                activeOpacity={0.7}
-              >
-                <Flag code={player.code} size={24} />
-                <View style={styles.playerInfo}>
-                  <Text style={[styles.teamRowName, isSel && styles.teamRowNameSelected]}>
-                    {player.name}
-                  </Text>
-                  <Text style={styles.playerTeamSmall}>{getTeamNameByCode(player.code, player.team, language)}</Text>
-                </View>
-                <View style={[styles.posBadge, { backgroundColor: POS_BG[player.pos] }]}>
-                  <Text style={[styles.posBadgeText, { color: POS_COLOR[player.pos] }]}>
-                    {player.pos}
-                  </Text>
-                </View>
-                {isSel && <CheckIcon />}
-              </TouchableOpacity>
-            );
-          })}
-          <View style={styles.listBottomPad} />
-        </ScrollView>
+
+        {/* Step 1 — Teams */}
+        {step === 'team' && (
+          <ScrollView style={styles.sheetList} showsVerticalScrollIndicator={false}>
+            {filteredTeams.map((tm) => {
+              const count = players.filter((p) => p.code === tm.code).length;
+              return (
+                <TouchableOpacity
+                  key={tm.code}
+                  style={styles.teamRow}
+                  onPress={() => selectTeam(tm)}
+                  activeOpacity={0.7}
+                >
+                  <Flag code={tm.code} size={26} />
+                  <View style={styles.playerInfo}>
+                    <Text style={styles.teamRowName}>{tm.name}</Text>
+                    <Text style={styles.playerTeamSmall}>
+                      {count} {count === 1 ? t('tournament.player') : t('tournament.players')}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={14} color={colors.dim} />
+                </TouchableOpacity>
+              );
+            })}
+            <View style={styles.listBottomPad} />
+          </ScrollView>
+        )}
+
+        {/* Step 2 — Players */}
+        {step === 'player' && (
+          <ScrollView style={styles.sheetList} showsVerticalScrollIndicator={false}>
+            {filteredPlayers.map((player, i) => {
+              const isSel = selected?.name === player.name;
+              return (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.playerRow, isSel && styles.playerRowSelected]}
+                  onPress={() => pick(player)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.playerInfo}>
+                    <Text style={[styles.teamRowName, isSel && styles.teamRowNameSelected]}>
+                      {player.name}
+                    </Text>
+                  </View>
+                  <View style={[styles.posBadge, { backgroundColor: POS_BG[player.pos] }]}>
+                    <Text style={[styles.posBadgeText, { color: POS_COLOR[player.pos] }]}>
+                      {player.pos}
+                    </Text>
+                  </View>
+                  {isSel && <CheckIcon />}
+                </TouchableOpacity>
+              );
+            })}
+            <View style={styles.listBottomPad} />
+          </ScrollView>
+        )}
       </Animated.View>
     </Modal>
   );
@@ -583,6 +663,25 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   sheetHeader: { padding: 14, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 10 },
+  playerSheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 10,
+    gap: 8,
+  },
+  playerSheetHeaderText: { flex: 1 },
+  backButton: { padding: 4, marginRight: 2 },
+  teamHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stepDots: { flexDirection: 'row', gap: 5 },
+  stepDot: {
+    width: 20,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.dim,
+  },
+  stepDotActive: { backgroundColor: colors.accent },
   sheetTitle: {
     color: colors.text,
     fontFamily: fonts.displayBold,
@@ -634,6 +733,22 @@ const styles = StyleSheet.create({
 
   playerInfo: { flex: 1, minWidth: 0 },
   playerTeamSmall: { color: colors.muted, fontFamily: fonts.body, fontSize: 10, marginTop: 1 },
+  playerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 13,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginBottom: 4,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  playerRowSelected: {
+    backgroundColor: colors.accentDim,
+    borderColor: `${colors.accent}44`,
+  },
   posBadge: {
     borderRadius: 9999,
     paddingHorizontal: 7,

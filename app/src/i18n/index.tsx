@@ -206,6 +206,10 @@ const translations: Record<Language, TranslationMap> = {
     'tournament.pickNationalTeam': 'Pick a national team',
     'tournament.searchTeam': 'Search team...',
     'tournament.searchPlayerTeam': 'Search player or team...',
+    'tournament.searchPlayer': 'Search player...',
+    'tournament.selectCountry': 'Select a country',
+    'tournament.player': 'player',
+    'tournament.players': 'players',
   },
   es: {
     'common.admin': 'Admin',
@@ -394,6 +398,10 @@ const translations: Record<Language, TranslationMap> = {
     'tournament.pickNationalTeam': 'Elige una selección',
     'tournament.searchTeam': 'Buscar equipo...',
     'tournament.searchPlayerTeam': 'Buscar jugador o equipo...',
+    'tournament.searchPlayer': 'Buscar jugador...',
+    'tournament.selectCountry': 'Seleccionar un país',
+    'tournament.player': 'jugador',
+    'tournament.players': 'jugadores',
   },
 };
 
