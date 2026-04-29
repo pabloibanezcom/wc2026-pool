@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Match, Prediction } from '../types';
 import Flag from './ui/Flag';
 import Badge from './ui/Badge';
@@ -15,6 +15,66 @@ function oddsToPercents(home: number | null, draw: number | null, away: number |
     d: Math.round((rd / total) * 100),
     a: Math.round((ra / total) * 100),
   };
+}
+
+interface OddsBarProps {
+  pct: { h: number; d: number; a: number };
+  homeColor: string;
+  awayColor: string;
+  homeLabel: string;
+  awayLabel: string;
+}
+
+function OddsBar({ pct, homeColor, awayColor, homeLabel, awayLabel }: OddsBarProps) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const labelOpacity = useRef(new Animated.Value(0)).current;
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  useEffect(() => {
+    if (trackWidth === 0) return;
+    Animated.parallel([
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 700,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(labelOpacity, {
+        toValue: 1,
+        duration: 400,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [trackWidth]);
+
+  const GAP = 1.5;
+  const homeWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, Math.max(0, (trackWidth * pct.h) / 100 - GAP)],
+  });
+  const awayWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, Math.max(0, (trackWidth * pct.a) / 100 - GAP)],
+  });
+
+  return (
+    <View style={styles.oddsBar}>
+      <Animated.View style={[styles.oddsLabels, { opacity: labelOpacity }]}>
+        <Text style={[styles.oddsLabelTeam, { color: homeColor }]}>{homeLabel} {pct.h}%</Text>
+        <Text style={styles.oddsLabelDraw}>Draw {pct.d}%</Text>
+        <Text style={[styles.oddsLabelTeam, { color: awayColor }]}>{pct.a}% {awayLabel}</Text>
+      </Animated.View>
+      <View
+        style={styles.oddsTrack}
+        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      >
+        <Animated.View style={[styles.oddsSegmentHome, { width: homeWidth, backgroundColor: homeColor }]} />
+        <View style={[styles.oddsSegmentDraw, { flex: 1 }]} />
+        <Animated.View style={[styles.oddsSegmentAway, { width: awayWidth, backgroundColor: awayColor }]} />
+      </View>
+    </View>
+  );
 }
 
 type Result = 'exact' | 'correct' | 'wrong';
@@ -157,23 +217,14 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
       {match.odds && state !== 'finished' && (() => {
         const pct = oddsToPercents(match.odds.home, match.odds.draw, match.odds.away);
         if (!pct) return null;
-        const hc = match.homeTeam.color || '#505a63';
-        const ac = match.awayTeam.color || '#505a63';
-        const homeLabel = getTeamLabel(match.homeTeam.name, match.homeTeam.code);
-        const awayLabel = getTeamLabel(match.awayTeam.name, match.awayTeam.code);
         return (
-          <View style={styles.oddsBar}>
-            <View style={styles.oddsLabels}>
-              <Text style={[styles.oddsLabelTeam, { color: hc }]}>{homeLabel} {pct.h}%</Text>
-              <Text style={styles.oddsLabelDraw}>Draw {pct.d}%</Text>
-              <Text style={[styles.oddsLabelTeam, { color: ac }]}>{pct.a}% {awayLabel}</Text>
-            </View>
-            <View style={styles.oddsTrack}>
-              <View style={[styles.oddsSegmentHome, { width: `${pct.h}%`, backgroundColor: hc }]} />
-              <View style={[styles.oddsSegmentDraw, { flex: 1 }]} />
-              <View style={[styles.oddsSegmentAway, { width: `${pct.a}%`, backgroundColor: ac }]} />
-            </View>
-          </View>
+          <OddsBar
+            pct={pct}
+            homeColor={match.homeTeam.color || '#505a63'}
+            awayColor={match.awayTeam.color || '#505a63'}
+            homeLabel={getTeamLabel(match.homeTeam.name, match.homeTeam.code)}
+            awayLabel={getTeamLabel(match.awayTeam.name, match.awayTeam.code)}
+          />
         );
       })()}
     </TouchableOpacity>
