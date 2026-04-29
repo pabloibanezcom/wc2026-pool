@@ -174,6 +174,11 @@ const translations: Record<Language, TranslationMap> = {
     'matchCard.predicted': 'Predicted',
 
     'predictionSheet.save': 'Save Prediction',
+    'predictionSheet.ptsIfExact': 'pts if exact score',
+    'predictionSheet.ptsIfOutcome': ({ outcome }) => `pts if ${outcome}`,
+    'predictionSheet.pctLikely': ({ pct }) => `${pct}% likely`,
+    'predictionSheet.teamWins': ({ code }) => `${code} wins`,
+    'predictionSheet.draw': 'Draw',
 
     'notify.title': 'Title',
     'notify.titlePlaceholder': 'Notification title',
@@ -367,6 +372,11 @@ const translations: Record<Language, TranslationMap> = {
     'matchCard.predicted': 'Pronosticado',
 
     'predictionSheet.save': 'Guardar pronóstico',
+    'predictionSheet.ptsIfExact': 'pts si marcador exacto',
+    'predictionSheet.ptsIfOutcome': ({ outcome }) => `pts si ${outcome}`,
+    'predictionSheet.pctLikely': ({ pct }) => `${pct}% probable`,
+    'predictionSheet.teamWins': ({ code }) => `${code} gana`,
+    'predictionSheet.draw': 'Empate',
 
     'notify.title': 'Título',
     'notify.titlePlaceholder': 'Título de la notificación',

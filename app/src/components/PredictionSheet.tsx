@@ -11,7 +11,7 @@ import {
 import { colors, borderRadius } from '../theme';
 import Flag from './ui/Flag';
 import { Match } from '../types';
-import { hasTbdTeam } from './MatchCard';
+import { hasTbdTeam, OddsBar, oddsToPercents, getTeamLabel } from './MatchCard';
 import { useI18n } from '../i18n';
 
 interface PredictionSheetProps {
@@ -19,6 +19,10 @@ interface PredictionSheetProps {
   existing?: [number, number];
   onSave: (matchId: string, score: [number, number]) => void;
   onClose: () => void;
+}
+
+function rarityMultiplier(prob: number): number {
+  return parseFloat(Math.max(1, Math.min(3, 50 / prob)).toFixed(1));
 }
 
 function ScoreControl({
@@ -92,6 +96,25 @@ export default function PredictionSheet({ match, existing, onSave, onClose }: Pr
     minute: '2-digit',
   });
 
+  // Odds & points preview
+  const pct = match.odds ? oddsToPercents(match.odds.home, match.odds.draw, match.odds.away) : null;
+  const predOutcome = score[0] > score[1] ? 'h' : score[0] < score[1] ? 'a' : 'd';
+  const outcomeProb = pct
+    ? (predOutcome === 'h' ? pct.h : predOutcome === 'a' ? pct.a : pct.d)
+    : 50;
+  const exactProb = Math.max(outcomeProb / 8, 2);
+  const exactPts = parseFloat((3 * rarityMultiplier(exactProb)).toFixed(1));
+  const outcomePts = parseFloat((1 * rarityMultiplier(outcomeProb)).toFixed(1));
+
+  const homeCode = getTeamLabel(match.homeTeam.name, match.homeTeam.code);
+  const awayCode = getTeamLabel(match.awayTeam.name, match.awayTeam.code);
+  const outcomeLabel =
+    predOutcome === 'h'
+      ? t('predictionSheet.teamWins', { code: homeCode })
+      : predOutcome === 'a'
+      ? t('predictionSheet.teamWins', { code: awayCode })
+      : t('predictionSheet.draw');
+
   return (
     <Modal transparent visible={!!match} animationType="none" onRequestClose={close}>
       <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
@@ -113,6 +136,19 @@ export default function PredictionSheet({ match, existing, onSave, onClose }: Pr
           </Text>
         </View>
 
+        {pct && (
+          <View style={styles.oddsCard}>
+            <OddsBar
+              pct={pct}
+              homeColor={match.homeTeam.color || '#505a63'}
+              awayColor={match.awayTeam.color || '#505a63'}
+              homeLabel={homeCode}
+              awayLabel={awayCode}
+              visible
+            />
+          </View>
+        )}
+
         <View style={styles.scorePickers}>
           <ScoreControl
             value={score[0]}
@@ -126,6 +162,29 @@ export default function PredictionSheet({ match, existing, onSave, onClose }: Pr
             label={match.awayTeam.name}
           />
         </View>
+
+        {pct && (
+          <View style={styles.pointsPreview}>
+            <View style={[styles.pointsCard, styles.pointsCardExact]}>
+              <Text style={[styles.pointsValue, { color: colors.accent }]}>+{exactPts}</Text>
+              <Text style={[styles.pointsLabel, { color: colors.accent }]}>
+                {t('predictionSheet.ptsIfExact')}
+              </Text>
+              <Text style={styles.pointsHint}>
+                {score[0]}–{score[1]}
+              </Text>
+            </View>
+            <View style={[styles.pointsCard, styles.pointsCardOutcome]}>
+              <Text style={[styles.pointsValue, { color: colors.blue }]}>+{outcomePts}</Text>
+              <Text style={[styles.pointsLabel, { color: colors.blue }]}>
+                {t('predictionSheet.ptsIfOutcome', { outcome: outcomeLabel })}
+              </Text>
+              <Text style={styles.pointsHint}>
+                {t('predictionSheet.pctLikely', { pct: outcomeProb })}
+              </Text>
+            </View>
+          </View>
+        )}
 
         <TouchableOpacity style={styles.saveBtn} onPress={save}>
           <Text style={styles.saveBtnText}>{t('predictionSheet.save')}</Text>
@@ -163,7 +222,7 @@ const styles = StyleSheet.create({
   },
   matchInfo: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   matchTeams: {
     flexDirection: 'row',
@@ -180,11 +239,19 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 12,
   },
+  oddsCard: {
+    backgroundColor: colors.card2,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 12,
+    marginBottom: 18,
+  },
   scorePickers: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 28,
+    marginBottom: 20,
   },
   scoreCol: {
     flex: 1,
@@ -226,6 +293,43 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     paddingHorizontal: 4,
     marginTop: 16,
+  },
+  pointsPreview: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 18,
+  },
+  pointsCard: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    alignItems: 'center',
+  },
+  pointsCardExact: {
+    backgroundColor: 'rgba(0,168,126,0.08)',
+    borderColor: 'rgba(0,168,126,0.25)',
+  },
+  pointsCardOutcome: {
+    backgroundColor: 'rgba(73,79,223,0.08)',
+    borderColor: 'rgba(73,79,223,0.25)',
+  },
+  pointsValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    lineHeight: 26,
+  },
+  pointsLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 3,
+    textAlign: 'center',
+    opacity: 0.85,
+  },
+  pointsHint: {
+    color: colors.dim,
+    fontSize: 9,
+    marginTop: 4,
   },
   saveBtn: {
     width: '100%',

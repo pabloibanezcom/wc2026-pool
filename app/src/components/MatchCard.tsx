@@ -7,7 +7,7 @@ import { colors, fonts } from '../theme';
 import { useI18n } from '../i18n';
 import { useScrollTriggerContext } from '../contexts/ScrollTrigger';
 
-function oddsToPercents(home: number | null, draw: number | null, away: number | null) {
+export function oddsToPercents(home: number | null, draw: number | null, away: number | null) {
   if (!home || !draw || !away) return null;
   const rh = 1 / home, rd = 1 / draw, ra = 1 / away;
   const total = rh + rd + ra;
@@ -27,7 +27,7 @@ interface OddsBarProps {
   visible: boolean;
 }
 
-function OddsBar({ pct, homeColor, awayColor, homeLabel, awayLabel, visible }: OddsBarProps) {
+export function OddsBar({ pct, homeColor, awayColor, homeLabel, awayLabel, visible }: OddsBarProps) {
   const progress = useRef(new Animated.Value(0)).current;
   const labelOpacity = useRef(new Animated.Value(0)).current;
   const [trackWidth, setTrackWidth] = useState(0);
@@ -97,7 +97,7 @@ function formatTime(utcDate: string, locale: string) {
   return new Date(utcDate).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 }
 
-function getTeamLabel(name: string, code?: string) {
+export function getTeamLabel(name: string, code?: string) {
   if (code && code.trim().length > 0) {
     return code.trim().toUpperCase();
   }
