@@ -18,10 +18,13 @@ import {
 
 const router = Router();
 
+const LOCK_MINUTES_BEFORE = 15;
+
 const predictionSchema = z.object({
   matchId: z.string().min(1),
   homeGoals: z.number().int().min(0).max(15),
   awayGoals: z.number().int().min(0).max(15),
+  qualifier: z.enum(['HOME', 'AWAY']).nullable().optional(),
 });
 
 const groupPredictionSchema = z.object({
@@ -72,9 +75,11 @@ function serializePrediction<T extends { _id: unknown; userId: unknown; matchId:
   };
 }
 
+const KNOCKOUT_STAGES = new Set(['ROUND_OF_32', 'ROUND_OF_16', 'QUARTER_FINAL', 'SEMI_FINAL', 'THIRD_PLACE', 'FINAL']);
+
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { matchId, homeGoals, awayGoals } = predictionSchema.parse(req.body);
+    const { matchId, homeGoals, awayGoals, qualifier } = predictionSchema.parse(req.body);
 
     const match = await Match.findById(matchId);
     if (!match) {
@@ -88,16 +93,37 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
       return;
     }
 
-    if (new Date() >= match.utcDate) {
-      res.status(400).json({ error: 'Match has already started. Predictions are locked.' });
+    const lockTime = new Date(match.utcDate.getTime() - LOCK_MINUTES_BEFORE * 60 * 1000);
+    if (new Date() >= lockTime) {
+      res.status(400).json({ error: 'Predictions are locked 15 minutes before kickoff.' });
       return;
+    }
+
+    const isKnockout = KNOCKOUT_STAGES.has(match.stage);
+
+    if (isKnockout) {
+      // Qualifier must be provided for knockout matches
+      if (!qualifier) {
+        res.status(400).json({ error: 'Knockout predictions require a qualifier (HOME or AWAY).' });
+        return;
+      }
+      // Qualifier must be consistent with predicted score (can't pick away if score shows home winning)
+      const predictedOutcome = deriveWinner(homeGoals, awayGoals);
+      if (predictedOutcome === 'HOME' && qualifier !== 'HOME') {
+        res.status(400).json({ error: 'Qualifier must match the predicted winner when the score is not a draw.' });
+        return;
+      }
+      if (predictedOutcome === 'AWAY' && qualifier !== 'AWAY') {
+        res.status(400).json({ error: 'Qualifier must match the predicted winner when the score is not a draw.' });
+        return;
+      }
     }
 
     const predictedWinner = deriveWinner(homeGoals, awayGoals);
 
     const prediction = await Prediction.findOneAndUpdate(
       { userId: req.userId, matchId },
-      { homeGoals, awayGoals, predictedWinner, points: null },
+      { homeGoals, awayGoals, predictedWinner, qualifier: isKnockout ? qualifier : null, points: null },
       { upsert: true, new: true }
     );
 

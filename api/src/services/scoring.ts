@@ -1,13 +1,32 @@
-import { IMatchOdds, MatchStage } from '../models/Match';
+import { IMatchOdds, MatchStage, MatchWinner } from '../models/Match';
 
-const STAGE_MULTIPLIERS: Record<MatchStage, number> = {
-  GROUP: 1,
-  ROUND_OF_32: 1.5,
-  ROUND_OF_16: 2,
-  QUARTER_FINAL: 2.5,
-  SEMI_FINAL: 3,
+const KNOCKOUT_STAGES = new Set<MatchStage>([
+  'ROUND_OF_32',
+  'ROUND_OF_16',
+  'QUARTER_FINAL',
+  'SEMI_FINAL',
+  'THIRD_PLACE',
+  'FINAL',
+]);
+
+const KNOCKOUT_ROUND_MULTIPLIERS: Record<MatchStage, number> = {
+  GROUP: 0,
+  ROUND_OF_32: 2,
+  ROUND_OF_16: 3,
+  QUARTER_FINAL: 4,
+  SEMI_FINAL: 5,
   THIRD_PLACE: 4,
-  FINAL: 4,
+  FINAL: 6,
+};
+
+const KNOCKOUT_EXACT_BONUS: Record<MatchStage, number> = {
+  GROUP: 0,
+  ROUND_OF_32: 6,
+  ROUND_OF_16: 8,
+  QUARTER_FINAL: 10,
+  SEMI_FINAL: 12,
+  THIRD_PLACE: 10,
+  FINAL: 15,
 };
 
 export interface ScoreInput {
@@ -17,47 +36,62 @@ export interface ScoreInput {
   actualAway: number;
   stage: MatchStage;
   odds?: IMatchOdds | null;
+  // Knockout only
+  qualifier?: 'HOME' | 'AWAY' | null;
+  actualWinner?: MatchWinner | null;
 }
 
-// Converts decimal odds into an upset multiplier.
-// Heavy favourites (odds ≤ 2) → 1.0 (no bonus).
-// Underdogs (odds > 2) → up to 4.0.
-function oddsMultiplier(odds: number | null | undefined): number {
-  if (!odds || odds <= 0) return 1.0;
-  return Math.max(1.0, Math.min(odds / 2, 4.0));
+function getOutcome(home: number, away: number): 'HOME' | 'AWAY' | 'DRAW' {
+  if (home > away) return 'HOME';
+  if (away > home) return 'AWAY';
+  return 'DRAW';
 }
 
-export function calculatePoints(input: ScoreInput): number {
-  const { predictedHome, predictedAway, actualHome, actualAway, stage, odds } = input;
+function calculateGroupPoints(input: ScoreInput): number {
+  const { predictedHome, predictedAway, actualHome, actualAway, odds } = input;
 
-  const predictedDiff = predictedHome - predictedAway;
-  const actualDiff = actualHome - actualAway;
-  const predictedOutcome = Math.sign(predictedDiff);
-  const actualOutcome = Math.sign(actualDiff);
+  const predictedOutcome = getOutcome(predictedHome, predictedAway);
+  const actualOutcome = getOutcome(actualHome, actualAway);
 
-  let base = 0;
+  if (predictedOutcome !== actualOutcome) return 0;
 
-  if (predictedHome === actualHome && predictedAway === actualAway) {
-    base = 10; // Exact score
-  } else if (predictedOutcome === actualOutcome) {
-    if (actualOutcome === 0) {
-      base = 5; // Correct draw, wrong score
-    } else if (predictedDiff === actualDiff) {
-      base = 6; // Correct goal difference + correct winner
-    } else {
-      base = 4; // Correct winner only
+  let chosenOdds: number | null = null;
+  if (odds) {
+    if (predictedOutcome === 'HOME') chosenOdds = odds.home;
+    else if (predictedOutcome === 'AWAY') chosenOdds = odds.away;
+    else chosenOdds = odds.draw;
+  }
+
+  // Fallback to 2 pts if no odds available
+  const outcomePts = chosenOdds && chosenOdds > 0 ? Math.round(chosenOdds * 2) : 2;
+  const exactBonus = predictedHome === actualHome && predictedAway === actualAway ? 5 : 0;
+
+  return Math.min(outcomePts + exactBonus, 20);
+}
+
+function calculateKnockoutPoints(input: ScoreInput): number {
+  const { predictedHome, predictedAway, actualHome, actualAway, stage, odds, qualifier, actualWinner } = input;
+
+  let advancingPts = 0;
+  if (qualifier && actualWinner && qualifier === actualWinner) {
+    const advancingOdds = qualifier === 'HOME' ? odds?.home : odds?.away;
+    if (advancingOdds && advancingOdds > 0) {
+      advancingPts = Math.round(advancingOdds * KNOCKOUT_ROUND_MULTIPLIERS[stage]);
     }
   }
 
-  if (base === 0) return 0;
+  const isExact = predictedHome === actualHome && predictedAway === actualAway;
+  const exactBonus = isExact ? KNOCKOUT_EXACT_BONUS[stage] : 0;
 
-  // Apply odds multiplier based on the actual outcome's pre-match odds
-  let outcomeOdds: number | null = null;
-  if (odds) {
-    if (actualOutcome > 0) outcomeOdds = odds.home;
-    else if (actualOutcome < 0) outcomeOdds = odds.away;
-    else outcomeOdds = odds.draw;
-  }
-
-  return Math.round(base * STAGE_MULTIPLIERS[stage] * oddsMultiplier(outcomeOdds));
+  return advancingPts + exactBonus;
 }
+
+export function calculatePoints(input: ScoreInput): number {
+  if (KNOCKOUT_STAGES.has(input.stage)) {
+    return calculateKnockoutPoints(input);
+  }
+  return calculateGroupPoints(input);
+}
+
+// Frontend helpers — exported for use in points preview components
+export { KNOCKOUT_ROUND_MULTIPLIERS, KNOCKOUT_EXACT_BONUS, KNOCKOUT_STAGES };

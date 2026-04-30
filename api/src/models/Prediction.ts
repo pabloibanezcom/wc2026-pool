@@ -7,6 +7,7 @@ export interface IPrediction extends Document {
   homeGoals: number;
   awayGoals: number;
   predictedWinner: MatchWinner;
+  qualifier: 'HOME' | 'AWAY' | null;
   points: number | null;
   createdAt: Date;
   updatedAt: Date;
@@ -23,6 +24,7 @@ const predictionSchema = new Schema<IPrediction>(
       enum: ['HOME', 'AWAY', 'DRAW'],
       required: true,
     },
+    qualifier: { type: String, enum: ['HOME', 'AWAY', null], default: null },
     points: { type: Number, default: null },
   },
   { timestamps: true }

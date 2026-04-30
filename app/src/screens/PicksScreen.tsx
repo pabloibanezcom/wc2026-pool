@@ -204,9 +204,9 @@ export default function PicksScreen() {
   const matchGroups = useMemo(() => groupMatchesByDay(shown, locale), [locale, shown]);
   const groupStandings = useMemo(() => getGroupsFromMatches(matches), [matches]);
 
-  const handleSave = async (matchId: string, score: [number, number]) => {
+  const handleSave = async (matchId: string, score: [number, number], qualifier?: 'HOME' | 'AWAY' | null) => {
     try {
-      const pred = await submitPrediction(matchId, score[0], score[1]);
+      const pred = await submitPrediction(matchId, score[0], score[1], qualifier);
       setPredictions((prev) => [...prev.filter((p) => p.matchId !== matchId), pred]);
     } catch {
       // silently fail
@@ -362,7 +362,10 @@ export default function PicksScreen() {
         match={selectedMatch}
         existing={
           selectedMatch && predMap[selectedMatch._id]
-            ? [predMap[selectedMatch._id].homeGoals, predMap[selectedMatch._id].awayGoals]
+            ? {
+                score: [predMap[selectedMatch._id].homeGoals, predMap[selectedMatch._id].awayGoals],
+                qualifier: predMap[selectedMatch._id].qualifier,
+              }
             : undefined
         }
         onSave={handleSave}

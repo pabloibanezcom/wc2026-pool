@@ -62,6 +62,7 @@ export interface Prediction {
   homeGoals: number;
   awayGoals: number;
   predictedWinner: MatchWinner;
+  qualifier: 'HOME' | 'AWAY' | null;
   points: number | null;
 }
 

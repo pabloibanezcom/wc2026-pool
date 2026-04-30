@@ -15,11 +15,17 @@ function normalizePrediction(prediction: Prediction & { matchId: unknown }): Pre
   return { ...prediction, matchId: normalizedMatchId };
 }
 
-export async function submitPrediction(matchId: string, homeGoals: number, awayGoals: number): Promise<Prediction> {
+export async function submitPrediction(
+  matchId: string,
+  homeGoals: number,
+  awayGoals: number,
+  qualifier?: 'HOME' | 'AWAY' | null,
+): Promise<Prediction> {
   const { data } = await apiClient.post<{ prediction: Prediction }>('/predictions', {
     matchId,
     homeGoals,
     awayGoals,
+    ...(qualifier !== undefined ? { qualifier } : {}),
   });
   return normalizePrediction(data.prediction as Prediction & { matchId: unknown });
 }

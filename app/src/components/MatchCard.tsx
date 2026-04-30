@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Match, Prediction } from '../types';
+import { Match, MatchStage, Prediction } from '../types';
 import Flag from './ui/Flag';
 import Badge from './ui/Badge';
 import { colors, fonts } from '../theme';
@@ -18,8 +18,35 @@ export function oddsToPercents(home: number | null, draw: number | null, away: n
   };
 }
 
+export function knockoutOddsToPercents(home: number | null, away: number | null) {
+  if (!home || !away) return null;
+  const rh = 1 / home, ra = 1 / away;
+  const total = rh + ra;
+  return {
+    h: Math.round((rh / total) * 100),
+    a: Math.round((ra / total) * 100),
+  };
+}
+
+export const KNOCKOUT_STAGES = new Set<MatchStage>([
+  'ROUND_OF_32', 'ROUND_OF_16', 'QUARTER_FINAL', 'SEMI_FINAL', 'THIRD_PLACE', 'FINAL',
+]);
+
+export function isKnockoutStage(stage: MatchStage): boolean {
+  return KNOCKOUT_STAGES.has(stage);
+}
+
 interface OddsBarProps {
   pct: { h: number; d: number; a: number };
+  homeColor: string;
+  awayColor: string;
+  homeLabel: string;
+  awayLabel: string;
+  visible: boolean;
+}
+
+interface KnockoutOddsBarProps {
+  pct: { h: number; a: number };
   homeColor: string;
   awayColor: string;
   homeLabel: string;
@@ -73,6 +100,57 @@ export function OddsBar({ pct, homeColor, awayColor, homeLabel, awayLabel, visib
       >
         <Animated.View style={[styles.oddsSegmentHome, { width: homeWidth, backgroundColor: homeColor }]} />
         <View style={[styles.oddsSegmentDraw, { flex: 1 }]} />
+        <Animated.View style={[styles.oddsSegmentAway, { width: awayWidth, backgroundColor: awayColor }]} />
+      </View>
+    </View>
+  );
+}
+
+export function KnockoutOddsBar({ pct, homeColor, awayColor, homeLabel, awayLabel, visible }: KnockoutOddsBarProps) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const labelOpacity = useRef(new Animated.Value(0)).current;
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  useEffect(() => {
+    if (trackWidth === 0 || !visible) return;
+    Animated.parallel([
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 700,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(labelOpacity, {
+        toValue: 1,
+        duration: 400,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [trackWidth, visible]);
+
+  const homeWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, Math.max(0, (trackWidth * pct.h) / 100 - 1)],
+  });
+  const awayWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, Math.max(0, (trackWidth * pct.a) / 100 - 1)],
+  });
+
+  return (
+    <View style={styles.oddsBar}>
+      <Animated.View style={[styles.oddsLabels, { opacity: labelOpacity }]}>
+        <Text style={[styles.oddsLabelTeam, { color: homeColor }]}>{homeLabel} {pct.h}%</Text>
+        <Text style={styles.oddsLabelDraw}>Qualifying odds</Text>
+        <Text style={[styles.oddsLabelTeam, { color: awayColor }]}>{pct.a}% {awayLabel}</Text>
+      </Animated.View>
+      <View
+        style={styles.oddsTrack}
+        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      >
+        <Animated.View style={[styles.oddsSegmentHome, { width: homeWidth, backgroundColor: homeColor }]} />
+        <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
         <Animated.View style={[styles.oddsSegmentAway, { width: awayWidth, backgroundColor: awayColor }]} />
       </View>
     </View>
@@ -179,6 +257,10 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
   }, [visible]);
 
   const state = getCardState(match, prediction);
+  const knockout = isKnockoutStage(match.stage);
+  const homeCode = getTeamLabel(match.homeTeam.name, match.homeTeam.code);
+  const awayCode = getTeamLabel(match.awayTeam.name, match.awayTeam.code);
+
   const cardStyle =
     state === 'empty'
       ? styles.cardEmpty
@@ -200,7 +282,12 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
   } else if (state === 'tbd') {
     action = <Text style={styles.tbdBadge}>{t('matchCard.teamsTbd')}</Text>;
   } else if (state === 'predicted') {
-    action = <Text style={styles.predictedBadge}>✓ {t('matchCard.predicted')}</Text>;
+    // Knockout: warn if no qualifier set
+    if (knockout && !prediction?.qualifier) {
+      action = <Text style={styles.qualifierWarning}>{t('matchCard.pickQualifier')}</Text>;
+    } else {
+      action = <Text style={styles.predictedBadge}>✓ {t('matchCard.predicted')}</Text>;
+    }
   } else if (state === 'live') {
     action = (
       <View style={styles.livePill}>
@@ -212,6 +299,17 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
   } else {
     action = <Text style={styles.finalText}>{t('common.final')}</Text>;
   }
+
+  // Qualifier display for predicted knockout matches
+  const qualifierBadge = knockout && state === 'predicted' && prediction?.qualifier ? (
+    <View style={styles.qualifierRow}>
+      <Text style={styles.qualifierLabel}>
+        {t('matchCard.advances', {
+          code: prediction.qualifier === 'HOME' ? homeCode : awayCode,
+        })}
+      </Text>
+    </View>
+  ) : null;
 
   return (
     <Animated.View
@@ -236,7 +334,7 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
         <View style={styles.matchRow}>
           <View style={styles.teamSide}>
             <Flag code={match.homeTeam.code} size={26} />
-            <Text style={styles.teamCode}>{getTeamLabel(match.homeTeam.name, match.homeTeam.code)}</Text>
+            <Text style={styles.teamCode}>{homeCode}</Text>
           </View>
 
           <View style={styles.scoreCenter}>
@@ -265,12 +363,28 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
           </View>
 
           <View style={[styles.teamSide, styles.teamSideRight]}>
-            <Text style={styles.teamCode}>{getTeamLabel(match.awayTeam.name, match.awayTeam.code)}</Text>
+            <Text style={styles.teamCode}>{awayCode}</Text>
             <Flag code={match.awayTeam.code} size={26} />
           </View>
         </View>
 
+        {qualifierBadge}
+
         {match.odds && state !== 'finished' && (() => {
+          if (knockout) {
+            const pct = knockoutOddsToPercents(match.odds.home, match.odds.away);
+            if (!pct) return null;
+            return (
+              <KnockoutOddsBar
+                pct={pct}
+                homeColor={match.homeTeam.color || '#505a63'}
+                awayColor={match.awayTeam.color || '#505a63'}
+                homeLabel={homeCode}
+                awayLabel={awayCode}
+                visible={visible}
+              />
+            );
+          }
           const pct = oddsToPercents(match.odds.home, match.odds.draw, match.odds.away);
           if (!pct) return null;
           return (
@@ -278,8 +392,8 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
               pct={pct}
               homeColor={match.homeTeam.color || '#505a63'}
               awayColor={match.awayTeam.color || '#505a63'}
-              homeLabel={getTeamLabel(match.homeTeam.name, match.homeTeam.code)}
-              awayLabel={getTeamLabel(match.awayTeam.name, match.awayTeam.code)}
+              homeLabel={homeCode}
+              awayLabel={awayCode}
               visible={visible}
             />
           );
@@ -340,6 +454,12 @@ const styles = StyleSheet.create({
   },
   predictedBadge: {
     color: colors.accent,
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
+  },
+  qualifierWarning: {
+    color: 'rgba(236,126,0,0.9)',
     fontSize: 11,
     fontWeight: '600',
     fontFamily: fonts.bodyMedium,
@@ -414,6 +534,17 @@ const styles = StyleSheet.create({
     color: colors.dim,
     fontSize: 14,
     fontFamily: fonts.body,
+  },
+  qualifierRow: {
+    alignItems: 'center',
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  qualifierLabel: {
+    color: colors.accent,
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: fonts.bodyMedium,
   },
   oddsBar: {
     marginTop: 10,

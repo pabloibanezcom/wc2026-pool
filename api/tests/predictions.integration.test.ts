@@ -156,7 +156,7 @@ describe('match predictions', () => {
       body: { matchId: String(started._id), homeGoals: 1, awayGoals: 1 },
     });
     expect(locked.status).toBe(400);
-    expect(locked.body).toEqual({ error: 'Match has already started. Predictions are locked.' });
+    expect(locked.body).toEqual({ error: 'Predictions are locked 15 minutes before kickoff.' });
   });
 
   it('only reveals other users predictions after kickoff', async () => {
@@ -186,6 +186,88 @@ describe('match predictions', () => {
     });
     expect(afterKickoff.status).toBe(200);
     expect(afterKickoff.body.predictions).toHaveLength(2);
+  });
+});
+
+describe('knockout predictions', () => {
+  it('saves a knockout prediction with a qualifier', async () => {
+    const { token } = await registerPlayer();
+    const match = await createMatch({ stage: 'ROUND_OF_16', group: null });
+
+    const response = await requestJson<{ prediction: { homeGoals: number; awayGoals: number; qualifier: string } }>(
+      '/predictions',
+      { token, body: { matchId: String(match._id), homeGoals: 2, awayGoals: 1, qualifier: 'HOME' } }
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.prediction).toMatchObject({ homeGoals: 2, awayGoals: 1, qualifier: 'HOME' });
+  });
+
+  it('saves a draw knockout prediction with an explicit qualifier', async () => {
+    const { token } = await registerPlayer();
+    const match = await createMatch({ stage: 'QUARTER_FINAL', group: null });
+
+    const response = await requestJson<{ prediction: { homeGoals: number; qualifier: string } }>(
+      '/predictions',
+      { token, body: { matchId: String(match._id), homeGoals: 1, awayGoals: 1, qualifier: 'AWAY' } }
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.prediction).toMatchObject({ homeGoals: 1, awayGoals: 1, qualifier: 'AWAY' });
+  });
+
+  it('rejects knockout prediction without qualifier', async () => {
+    const { token } = await registerPlayer();
+    const match = await createMatch({ stage: 'SEMI_FINAL', group: null });
+
+    const response = await requestJson('/predictions', {
+      token,
+      body: { matchId: String(match._id), homeGoals: 1, awayGoals: 0 },
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Knockout predictions require a qualifier (HOME or AWAY).' });
+  });
+
+  it('rejects qualifier inconsistent with predicted score', async () => {
+    const { token } = await registerPlayer();
+    const match = await createMatch({ stage: 'ROUND_OF_32', group: null });
+
+    // Score says HOME wins (2-0) but qualifier picks AWAY
+    const response = await requestJson('/predictions', {
+      token,
+      body: { matchId: String(match._id), homeGoals: 2, awayGoals: 0, qualifier: 'AWAY' },
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Qualifier must match the predicted winner when the score is not a draw.' });
+  });
+
+  it('rejects qualifier inconsistent with away-wins score', async () => {
+    const { token } = await registerPlayer();
+    const match = await createMatch({ stage: 'FINAL', group: null });
+
+    // Score says AWAY wins (0-2) but qualifier picks HOME
+    const response = await requestJson('/predictions', {
+      token,
+      body: { matchId: String(match._id), homeGoals: 0, awayGoals: 2, qualifier: 'HOME' },
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Qualifier must match the predicted winner when the score is not a draw.' });
+  });
+
+  it('group stage predictions do not require qualifier', async () => {
+    const { token } = await registerPlayer();
+    const match = await createMatch({ stage: 'GROUP', group: 'A' });
+
+    const response = await requestJson<{ prediction: { qualifier: unknown } }>(
+      '/predictions',
+      { token, body: { matchId: String(match._id), homeGoals: 1, awayGoals: 0 } }
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.prediction.qualifier).toBeNull();
   });
 });
 

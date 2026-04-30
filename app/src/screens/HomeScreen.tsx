@@ -109,9 +109,9 @@ export default function HomeScreen() {
   const totalPoints = user?.totalPoints ?? 0;
   const homeLeagues = leagues.slice(0, 2);
 
-  const handleSave = async (matchId: string, score: [number, number]) => {
+  const handleSave = async (matchId: string, score: [number, number], qualifier?: 'HOME' | 'AWAY' | null) => {
     try {
-      const pred = await submitPrediction(matchId, score[0], score[1]);
+      const pred = await submitPrediction(matchId, score[0], score[1], qualifier);
       setPredictions((prev) => {
         const filtered = prev.filter((p) => p.matchId !== matchId);
         return [...filtered, pred];
@@ -254,7 +254,10 @@ export default function HomeScreen() {
       <PredictionSheet
         match={selectedMatch}
         existing={selectedMatch && predMap[selectedMatch._id]
-          ? [predMap[selectedMatch._id].homeGoals, predMap[selectedMatch._id].awayGoals]
+          ? {
+              score: [predMap[selectedMatch._id].homeGoals, predMap[selectedMatch._id].awayGoals],
+              qualifier: predMap[selectedMatch._id].qualifier,
+            }
           : undefined}
         onSave={handleSave}
         onClose={() => setSelectedMatch(null)}
