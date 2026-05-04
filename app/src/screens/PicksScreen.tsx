@@ -325,6 +325,7 @@ export default function PicksScreen() {
                 key={group.id}
                 group={group}
                 order={groupPredMap[group.id]?.orderedTeams ?? group.teams}
+                progress={groupPredMap[group.id]?.progress}
                 onOrderChange={groupPredictionsLocked ? undefined : handleGroupOrder}
                 onDragStateChange={setIsDraggingGroupTeam}
               />
@@ -393,15 +394,18 @@ export default function PicksScreen() {
 function GroupCard({
   group,
   order,
+  progress,
   onOrderChange,
   onDragStateChange,
 }: {
   group: GroupStanding;
   order: TeamInfo[];
+  progress?: GroupPrediction['progress'];
   onOrderChange?: (groupId: string, orderedTeams: TeamInfo[]) => void;
   onDragStateChange: (isDragging: boolean) => void;
 }) {
   const { t } = useI18n();
+  const progressByCode = new Map(progress?.teams.map((team) => [team.code, team]) ?? []);
   const moveTeam = (index: number, targetIndex: number) => {
     if (targetIndex < 0 || targetIndex >= order.length || targetIndex === index) return;
     if (!onOrderChange) return;
@@ -415,6 +419,13 @@ function GroupCard({
     <View style={styles.groupCard}>
       <View style={styles.groupHeader}>
         <Text style={styles.groupTitle}>{t('common.group', { group: group.id })}</Text>
+        {progress && (
+          <View style={styles.groupPointsPill}>
+            <Text style={styles.groupPointsText}>
+              {progress.projectedPoints} {t('common.pointsShort')}
+            </Text>
+          </View>
+        )}
       </View>
 
       {order.map((team, index) => {
@@ -425,6 +436,7 @@ function GroupCard({
           <DraggableGroupTeamRow
             key={team.code}
             team={team}
+            progress={progressByCode.get(team.code)}
             index={index}
             count={order.length}
             qualifies={qualifies}
@@ -443,6 +455,7 @@ const GROUP_ROW_HEIGHT = 52;
 
 function DraggableGroupTeamRow({
   team,
+  progress,
   index,
   count,
   qualifies,
@@ -452,6 +465,7 @@ function DraggableGroupTeamRow({
   disabled,
 }: {
   team: TeamInfo;
+  progress?: NonNullable<GroupPrediction['progress']>['teams'][number];
   index: number;
   count: number;
   qualifies: boolean;
@@ -537,6 +551,21 @@ function DraggableGroupTeamRow({
       >
         {team.name}
       </Text>
+      {progress?.currentPosition && (
+        <View style={[
+          styles.groupProgressBadge,
+          progress.status === 'exact' && styles.groupProgressBadgeExact,
+          progress.status === 'qualified' && styles.groupProgressBadgeQualified,
+        ]}>
+          <Text style={[
+            styles.groupProgressText,
+            progress.status === 'exact' && styles.groupProgressTextExact,
+            progress.status === 'qualified' && styles.groupProgressTextQualified,
+          ]}>
+            #{progress.currentPosition} · +{progress.points}
+          </Text>
+        </View>
+      )}
       {!disabled && (
         <View style={styles.dragHandle} {...panResponder.panHandlers}>
           <View style={styles.dragHandleLine} />
@@ -615,6 +644,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  groupPointsPill: {
+    backgroundColor: colors.accentDim,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  groupPointsText: {
+    color: colors.accent,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 11,
+    fontWeight: '700',
+  },
   groupTeamRow: {
     borderLeftWidth: 2,
     borderLeftColor: 'transparent',
@@ -659,6 +700,30 @@ const styles = StyleSheet.create({
   },
   groupTeamNameDim: {
     color: colors.muted,
+  },
+  groupProgressBadge: {
+    backgroundColor: colors.card2,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  groupProgressBadgeExact: {
+    backgroundColor: colors.accentDim,
+  },
+  groupProgressBadgeQualified: {
+    backgroundColor: colors.blueDim,
+  },
+  groupProgressText: {
+    color: colors.dim,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  groupProgressTextExact: {
+    color: colors.accent,
+  },
+  groupProgressTextQualified: {
+    color: colors.blue,
   },
   groupTeamDragging: {
     backgroundColor: colors.card2,

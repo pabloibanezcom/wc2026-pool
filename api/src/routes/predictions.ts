@@ -59,12 +59,15 @@ async function serializeGroupPrediction<T extends { _id: unknown; userId: unknow
     ? prediction.orderedTeamCodes
     : prediction.orderedTeams?.map((team) => team.code) ?? [];
 
+  const progress = await getGroupPredictionProgress(orderedTeamCodes, language);
+
   return {
     ...prediction,
     _id: String(prediction._id),
     userId: String(prediction.userId),
     orderedTeamCodes,
     orderedTeams: await hydrateTeamCodes(orderedTeamCodes, language),
+    progress,
   };
 }
 
@@ -78,6 +81,152 @@ function serializePrediction<T extends { _id: unknown; userId: unknown; matchId:
 }
 
 const KNOCKOUT_STAGES = new Set(['ROUND_OF_32', 'ROUND_OF_16', 'QUARTER_FINAL', 'SEMI_FINAL', 'THIRD_PLACE', 'FINAL']);
+const GROUP_POSITION_POINTS = [8, 6, 3, 3];
+
+interface GroupTableRow {
+  code: string;
+  played: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+}
+
+function emptyGroupRow(code: string): GroupTableRow {
+  return {
+    code,
+    played: 0,
+    points: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    goalDifference: 0,
+  };
+}
+
+function applyResult(row: GroupTableRow, goalsFor: number, goalsAgainst: number): void {
+  row.played += 1;
+  row.goalsFor += goalsFor;
+  row.goalsAgainst += goalsAgainst;
+  row.goalDifference = row.goalsFor - row.goalsAgainst;
+
+  if (goalsFor > goalsAgainst) row.points += 3;
+  else if (goalsFor === goalsAgainst) row.points += 1;
+}
+
+async function getCurrentGroupTable(group: string): Promise<GroupTableRow[]> {
+  const matches = await Match.find({ stage: 'GROUP', group }).sort({ utcDate: 1 }).lean();
+  const table = new Map<string, GroupTableRow>();
+
+  matches.forEach((match) => {
+    const { homeTeamCode, awayTeamCode } = getMatchTeamCodes(match);
+    if (!isTeamCodeTbd(homeTeamCode)) table.set(homeTeamCode, table.get(homeTeamCode) ?? emptyGroupRow(homeTeamCode));
+    if (!isTeamCodeTbd(awayTeamCode)) table.set(awayTeamCode, table.get(awayTeamCode) ?? emptyGroupRow(awayTeamCode));
+
+    if (match.status !== 'FINISHED' || !match.result || isTeamCodeTbd(homeTeamCode) || isTeamCodeTbd(awayTeamCode)) {
+      return;
+    }
+
+    applyResult(table.get(homeTeamCode)!, match.result.homeGoals, match.result.awayGoals);
+    applyResult(table.get(awayTeamCode)!, match.result.awayGoals, match.result.homeGoals);
+  });
+
+  return Array.from(table.values()).sort((a, b) =>
+    b.points - a.points ||
+    b.goalDifference - a.goalDifference ||
+    b.goalsFor - a.goalsFor ||
+    a.code.localeCompare(b.code)
+  );
+}
+
+function calculateGroupPredictionProgress(predictedCodes: string[], currentCodes: string[]) {
+  const currentPositionByCode = new Map(currentCodes.map((code, index) => [code, index]));
+  let projectedPoints = 0;
+
+  const teams = predictedCodes.map((code, predictedIndex) => {
+    const currentIndex = currentPositionByCode.get(code);
+    let points = 0;
+    let status: 'exact' | 'qualified' | 'miss' | 'pending' = 'pending';
+
+    if (currentIndex !== undefined) {
+      if (currentIndex === predictedIndex) {
+        points = GROUP_POSITION_POINTS[predictedIndex] ?? 0;
+        status = 'exact';
+      } else if (predictedIndex < 3 && currentIndex < 3) {
+        points = 2;
+        status = 'qualified';
+      } else {
+        status = 'miss';
+      }
+    }
+
+    projectedPoints += points;
+
+    return {
+      code,
+      predictedPosition: predictedIndex + 1,
+      currentPosition: currentIndex === undefined ? null : currentIndex + 1,
+      points,
+      status,
+    };
+  });
+
+  const isPerfect = predictedCodes.length > 0 &&
+    predictedCodes.every((code, index) => currentCodes[index] === code);
+
+  if (isPerfect) projectedPoints += 5;
+
+  return {
+    projectedPoints,
+    perfectBonus: isPerfect ? 5 : 0,
+    currentOrderCodes: currentCodes,
+    teams,
+  };
+}
+
+async function getGroupPredictionProgress(orderedTeamCodes: string[], language: ApiLanguage) {
+  const normalizedCodes = orderedTeamCodes.map(normalizeCode);
+  const firstCode = normalizedCodes[0];
+  if (!firstCode) return null;
+
+  const match = await Match.findOne({
+    stage: 'GROUP',
+    $or: [{ homeTeamCode: firstCode }, { awayTeamCode: firstCode }],
+  }).lean();
+  if (!match?.group) return null;
+
+  const table = await getCurrentGroupTable(match.group);
+  const hasStarted = table.some((row) => row.played > 0);
+  if (!hasStarted) {
+    return {
+      projectedPoints: 0,
+      perfectBonus: 0,
+      currentOrderCodes: [],
+      teams: normalizedCodes.map((code, index) => ({
+        code,
+        predictedPosition: index + 1,
+        currentPosition: null,
+        points: 0,
+        status: 'pending' as const,
+      })),
+      currentOrder: [],
+    };
+  }
+
+  const currentOrderCodes = table.map((row) => row.code);
+  const progress = calculateGroupPredictionProgress(normalizedCodes, currentOrderCodes);
+  const hydratedCurrentOrder = await hydrateTeamCodes(currentOrderCodes, language);
+
+  return {
+    ...progress,
+    currentOrder: hydratedCurrentOrder.map((team, index) => ({
+      ...team,
+      position: index + 1,
+      played: table[index]?.played ?? 0,
+      points: table[index]?.points ?? 0,
+      goalDifference: table[index]?.goalDifference ?? 0,
+    })),
+  };
+}
 
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {

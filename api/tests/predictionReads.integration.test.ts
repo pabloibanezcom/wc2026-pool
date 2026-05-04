@@ -77,6 +77,68 @@ describe('prediction read routes', () => {
     expect(response.body.predictions[0].orderedTeamCodes).toEqual(['ARG', 'ESP']);
     expect(response.body.predictions[0].orderedTeams.map((team) => team.name)).toEqual(['Argentina', 'Espa\u00f1a']);
   });
+
+  it('returns projected group standing points from current results', async () => {
+    const { token, user } = await registerPlayer();
+    await Match.create([
+      {
+        externalId: 501,
+        stage: 'GROUP',
+        group: 'B',
+        matchday: 1,
+        homeTeamCode: 'ARG',
+        awayTeamCode: 'ESP',
+        utcDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        status: 'FINISHED',
+        result: { homeGoals: 2, awayGoals: 0, winner: 'HOME' },
+      },
+      {
+        externalId: 502,
+        stage: 'GROUP',
+        group: 'B',
+        matchday: 1,
+        homeTeamCode: 'BRA',
+        awayTeamCode: 'FRA',
+        utcDate: new Date(Date.now() - 23 * 60 * 60 * 1000),
+        status: 'FINISHED',
+        result: { homeGoals: 1, awayGoals: 1, winner: 'DRAW' },
+      },
+    ]);
+    await GroupPrediction.create({
+      userId: user.id,
+      group: 'B',
+      orderedTeamCodes: ['ARG', 'BRA', 'FRA', 'ESP'],
+    });
+
+    const response = await requestJson<{
+      predictions: Array<{
+        progress: {
+          projectedPoints: number;
+          perfectBonus: number;
+          currentOrderCodes: string[];
+          teams: Array<{ code: string; currentPosition: number; points: number; status: string }>;
+        };
+      }>;
+    }>('/predictions/groups/mine', { token });
+
+    expect(response.status).toBe(200);
+    expect(response.body.predictions[0].progress).toMatchObject({
+      projectedPoints: 25,
+      perfectBonus: 5,
+      currentOrderCodes: ['ARG', 'BRA', 'FRA', 'ESP'],
+    });
+    expect(response.body.predictions[0].progress.teams.map((team) => ({
+      code: team.code,
+      currentPosition: team.currentPosition,
+      points: team.points,
+      status: team.status,
+    }))).toEqual([
+      { code: 'ARG', currentPosition: 1, points: 8, status: 'exact' },
+      { code: 'BRA', currentPosition: 2, points: 6, status: 'exact' },
+      { code: 'FRA', currentPosition: 3, points: 3, status: 'exact' },
+      { code: 'ESP', currentPosition: 4, points: 3, status: 'exact' },
+    ]);
+  });
 });
 
 describe('tournament predictions', () => {

@@ -73,6 +73,24 @@ export interface GroupPrediction {
   orderedTeamCodes: string[];
   orderedTeams: TeamInfo[];
   points: number | null;
+  progress?: {
+    projectedPoints: number;
+    perfectBonus: number;
+    currentOrderCodes: string[];
+    currentOrder: Array<TeamInfo & {
+      position: number;
+      played: number;
+      points: number;
+      goalDifference: number;
+    }>;
+    teams: Array<{
+      code: string;
+      predictedPosition: number;
+      currentPosition: number | null;
+      points: number;
+      status: 'exact' | 'qualified' | 'miss' | 'pending';
+    }>;
+  } | null;
 }
 
 export interface LeagueMember {
