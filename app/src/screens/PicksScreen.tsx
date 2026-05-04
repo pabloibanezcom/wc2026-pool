@@ -32,6 +32,8 @@ import { TournamentPicks, PlayerOption, TeamOption } from '../data/tournamentDat
 import { colors, fonts } from '../theme';
 import { useI18n } from '../i18n';
 
+const LIVE_SCORE_REFRESH_MS = 60 * 1000;
+
 function getResult(pred: Prediction, match: Match): 'exact' | 'correct' | 'wrong' | null {
   if (!match.result) return null;
   const { homeGoals, awayGoals } = match.result;
@@ -165,6 +167,16 @@ export default function PicksScreen() {
       load();
     }, [load])
   );
+
+  useEffect(() => {
+    if (!matches.some((match) => match.status === 'LIVE')) return;
+
+    const interval = setInterval(() => {
+      load();
+    }, LIVE_SCORE_REFRESH_MS);
+
+    return () => clearInterval(interval);
+  }, [load, matches]);
 
   useEffect(() => {
     fetchTournamentPrediction().then(setTournamentPicks).catch(() => {});

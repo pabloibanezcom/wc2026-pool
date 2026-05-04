@@ -9,6 +9,8 @@ import LoadingView from '../components/ui/LoadingView';
 import { colors, spacing, fontSize, borderRadius } from '../theme';
 import { useI18n } from '../i18n';
 
+const LIVE_SCORE_REFRESH_MS = 60 * 1000;
+
 const STAGES: { label: string; value: MatchStage }[] = [
   { label: 'Groups', value: 'GROUP' },
   { label: 'R32', value: 'ROUND_OF_32' },
@@ -42,6 +44,16 @@ export default function MatchListScreen() {
     setLoading(true);
     loadMatches();
   }, [activeStage, language]);
+
+  useEffect(() => {
+    if (!matches.some((match) => match.status === 'LIVE')) return;
+
+    const interval = setInterval(() => {
+      loadMatches();
+    }, LIVE_SCORE_REFRESH_MS);
+
+    return () => clearInterval(interval);
+  }, [matches, activeStage, language]);
 
   const onRefresh = async () => {
     setRefreshing(true);

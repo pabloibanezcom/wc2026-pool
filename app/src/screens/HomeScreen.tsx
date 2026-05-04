@@ -25,6 +25,8 @@ import { colors, fonts } from '../theme';
 import { submitPrediction } from '../api/predictions';
 import { useI18n } from '../i18n';
 
+const LIVE_SCORE_REFRESH_MS = 60 * 1000;
+
 function SectionLabel({ children }: { children: string }) {
   return (
     <Text style={styles.sectionLabel}>{children.toUpperCase()}</Text>
@@ -90,6 +92,16 @@ export default function HomeScreen() {
       load();
     }, [load])
   );
+
+  useEffect(() => {
+    if (!matches.some((match) => match.status === 'LIVE')) return;
+
+    const interval = setInterval(() => {
+      load();
+    }, LIVE_SCORE_REFRESH_MS);
+
+    return () => clearInterval(interval);
+  }, [load, matches]);
 
   const now = new Date();
   const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);

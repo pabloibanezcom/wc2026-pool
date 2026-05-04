@@ -3,6 +3,7 @@ import { Match } from '../models/Match';
 import { Prediction } from '../models/Prediction';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { getRequestLanguage, hydrateMatch, hydrateMatches } from '../services/countryTeamService';
+import { applyLiveScores } from '../services/liveScoreService';
 
 const router = Router();
 
@@ -15,7 +16,8 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
   if (status) filter.status = status;
 
   const matches = await Match.find(filter).sort({ utcDate: 1 }).lean();
-  res.json({ matches: await hydrateMatches(matches, getRequestLanguage(req)) });
+  const matchesWithLiveScores = await applyLiveScores(matches);
+  res.json({ matches: await hydrateMatches(matchesWithLiveScores, getRequestLanguage(req)) });
 });
 
 router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
@@ -30,7 +32,8 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
     matchId: match._id,
   }).lean();
 
-  res.json({ match: await hydrateMatch(match, getRequestLanguage(req)), prediction: prediction || null });
+  const [matchWithLiveScore] = await applyLiveScores([match]);
+  res.json({ match: await hydrateMatch(matchWithLiveScore, getRequestLanguage(req)), prediction: prediction || null });
 });
 
 export default router;

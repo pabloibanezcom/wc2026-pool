@@ -11,6 +11,8 @@ import { useI18n } from '../i18n';
 
 type RouteParams = { MatchDetail: { matchId: string } };
 
+const LIVE_SCORE_REFRESH_MS = 60 * 1000;
+
 export default function MatchDetailScreen() {
   const { language, t } = useI18n();
   const route = useRoute<RouteProp<RouteParams, 'MatchDetail'>>();
@@ -25,6 +27,16 @@ export default function MatchDetailScreen() {
     setLoading(true);
     loadMatch();
   }, [route.params.matchId, language]);
+
+  useEffect(() => {
+    if (match?.status !== 'LIVE') return;
+
+    const interval = setInterval(() => {
+      loadMatch();
+    }, LIVE_SCORE_REFRESH_MS);
+
+    return () => clearInterval(interval);
+  }, [match?.status, route.params.matchId, language]);
 
   const loadMatch = async () => {
     try {
