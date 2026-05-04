@@ -206,6 +206,18 @@ function makeResult(match: MatchDoc): { homeGoals: number; awayGoals: number; wi
   };
 }
 
+function makeLiveResult(match: MatchDoc): { homeGoals: number; awayGoals: number; winner: MatchWinner } {
+  const finalish = makeResult(match);
+  const homeGoals = Math.max(0, finalish.homeGoals - (stableNumber(match, 8) % 2));
+  const awayGoals = Math.max(0, finalish.awayGoals - (stableNumber(match, 9) % 2));
+
+  return {
+    homeGoals,
+    awayGoals,
+    winner: deriveWinner(homeGoals, awayGoals),
+  };
+}
+
 function sortMatches(matches: MatchDoc[]): MatchDoc[] {
   return [...matches].sort((a, b) => {
     const dateDiff = new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
@@ -555,7 +567,7 @@ async function resetAndApplyMatches(db: Db, scenario: ScenarioDefinition): Promi
         update: {
           $set: {
             status: isFinished ? 'FINISHED' : isLive ? 'LIVE' : 'SCHEDULED',
-            result: isFinished ? makeResult(match) : null,
+            result: isFinished ? makeResult(match) : isLive ? makeLiveResult(match) : null,
             scoresProcessed: false,
           },
         },

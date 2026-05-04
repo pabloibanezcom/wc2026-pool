@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
-import { MatchStage, MatchStatus } from '../models/Match';
+import { MatchStage, MatchStatus, MatchWinner } from '../models/Match';
 
 const client = axios.create({
   baseURL: 'https://api.football-data.org/v4',
@@ -89,6 +89,12 @@ function mapTeamCode(team: { name: string | null; tla: string | null }): string 
     .toUpperCase();
 }
 
+function deriveWinner(home: number, away: number): MatchWinner {
+  if (home > away) return 'HOME';
+  if (away > home) return 'AWAY';
+  return 'DRAW';
+}
+
 export async function fetchAllMatches(): Promise<FootballDataMatch[]> {
   try {
     const response = await client.get(`/competitions/${COMPETITION_CODE}/matches`);
@@ -102,14 +108,7 @@ export async function fetchAllMatches(): Promise<FootballDataMatch[]> {
 export function mapExternalMatch(ext: FootballDataMatch) {
   const stage = mapStage(ext.stage);
   const status = mapStatus(ext.status);
-  const winner =
-    ext.score.fullTime.home != null && ext.score.fullTime.away != null
-      ? ext.score.fullTime.home > ext.score.fullTime.away
-        ? 'HOME'
-        : ext.score.fullTime.away > ext.score.fullTime.home
-          ? 'AWAY'
-          : 'DRAW'
-      : null;
+  const hasScore = ext.score.fullTime.home != null && ext.score.fullTime.away != null;
 
   const homeTeamName = mapTeamName(ext.homeTeam.name);
   const awayTeamName = mapTeamName(ext.awayTeam.name);
@@ -130,11 +129,11 @@ export function mapExternalMatch(ext: FootballDataMatch) {
     utcDate: new Date(ext.utcDate),
     status,
     result:
-      status === 'FINISHED' && ext.score.fullTime.home != null
+      (status === 'FINISHED' || status === 'LIVE') && hasScore
         ? {
             homeGoals: ext.score.fullTime.home!,
             awayGoals: ext.score.fullTime.away!,
-            winner: winner!,
+            winner: deriveWinner(ext.score.fullTime.home!, ext.score.fullTime.away!),
           }
         : null,
   };

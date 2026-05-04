@@ -350,9 +350,13 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
               </Text>
             ) : (
               <>
-                <Text style={styles.resultScore}>
-                  {match.result?.homeGoals ?? '?'} – {match.result?.awayGoals ?? '?'}
-                </Text>
+                {match.result ? (
+                  <Text style={styles.resultScore}>
+                    {match.result.homeGoals} – {match.result.awayGoals}
+                  </Text>
+                ) : (
+                  <Text style={styles.scorePending}>{t('matchCard.scorePending')}</Text>
+                )}
                 {prediction ? (
                   <Text style={styles.pickText}>
                     {t('common.pick')}: {prediction.homeGoals}–{prediction.awayGoals}
@@ -527,6 +531,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     fontFamily: fonts.bodyMedium,
+  },
+  scorePending: {
+    color: colors.dim,
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: fonts.bodyMedium,
+    textTransform: 'uppercase',
   },
   pickText: {
     color: colors.dim,
