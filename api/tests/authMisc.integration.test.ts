@@ -140,4 +140,41 @@ describe('misc app and auth routes', () => {
     expect(secondLogin.status).toBe(200);
     expect(secondLogin.body.user.name).toBe('Pablo');
   });
+
+  it('lets only master users update poll configuration', async () => {
+    const player = await requestJson<{ token: string }>('/auth/register', {
+      body: { email: 'player@wc2026.test', name: 'Player', password: 'valid-password' },
+    });
+    const master = await requestJson<{ token: string }>('/auth/register', {
+      body: { email: 'master@wc2026.test', name: 'Master', password: 'valid-password' },
+    });
+    const deadline = new Date('2026-06-11T12:00:00Z').toISOString();
+
+    const denied = await requestJson('/config/poll', {
+      method: 'PATCH',
+      token: player.body.token,
+      body: { groupPredictionsDeadline: deadline },
+    });
+    expect(denied.status).toBe(403);
+
+    const updated = await requestJson<{ config: { groupPredictionsDeadline: string; tournamentPredictionsDeadline: string | null } }>(
+      '/config/poll',
+      {
+        method: 'PATCH',
+        token: master.body.token,
+        body: {
+          groupPredictionsDeadline: deadline,
+          tournamentPredictionsDeadline: null,
+        },
+      }
+    );
+    expect(updated.status).toBe(200);
+    expect(updated.body.config.groupPredictionsDeadline).toBe(deadline);
+
+    const read = await requestJson<{ config: { groupPredictionsDeadline: string } }>('/config/poll', {
+      token: player.body.token,
+    });
+    expect(read.status).toBe(200);
+    expect(read.body.config.groupPredictionsDeadline).toBe(deadline);
+  });
 });

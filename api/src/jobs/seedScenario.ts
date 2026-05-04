@@ -95,6 +95,7 @@ const SCENARIO_COLLECTIONS = new Set([
   'predictions',
   'grouppredictions',
   'tournamentpredictions',
+  'pollconfigs',
 ]);
 const GENERATED_COLLECTIONS = new Set(['predictions', 'grouppredictions', 'tournamentpredictions']);
 

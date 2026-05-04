@@ -343,6 +343,63 @@ describe('group predictions', () => {
       body: { group: 'F', orderedTeamCodes: ['ARG', 'ESP'] },
     });
     expect(locked.status).toBe(400);
-    expect(locked.body).toEqual({ error: 'This group has already started. Predictions are locked.' });
+    expect(locked.body).toEqual({ error: 'Group predictions are locked.' });
+  });
+
+  it('locks group predictions using the global poll deadline', async () => {
+    const { token } = await registerPlayer();
+    await createMatch({ externalId: 401, group: 'G', homeTeamCode: 'ARG', awayTeamCode: 'ESP' });
+
+    const beforeDeadline = await requestJson('/predictions/groups', {
+      token,
+      body: { group: 'G', orderedTeamCodes: ['ARG', 'ESP'] },
+    });
+    expect(beforeDeadline.status).toBe(200);
+
+    const master = await registerPlayer('master@wc2026.test');
+    const update = await requestJson('/config/poll', {
+      method: 'PATCH',
+      token: master.token,
+      body: {
+        groupPredictionsDeadline: new Date(Date.now() - 60 * 1000).toISOString(),
+      },
+    });
+    expect(update.status).toBe(200);
+
+    const afterDeadline = await requestJson('/predictions/groups', {
+      token,
+      body: { group: 'G', orderedTeamCodes: ['ESP', 'ARG'] },
+    });
+    expect(afterDeadline.status).toBe(400);
+    expect(afterDeadline.body).toEqual({ error: 'Group predictions are locked.' });
+  });
+});
+
+describe('tournament predictions', () => {
+  it('locks tournament predictions using the global poll deadline', async () => {
+    const player = await registerPlayer();
+    const master = await registerPlayer('master@wc2026.test');
+
+    const open = await requestJson('/predictions/tournament', {
+      token: player.token,
+      body: { champion: { code: 'ARG' } },
+    });
+    expect(open.status).toBe(200);
+
+    const update = await requestJson('/config/poll', {
+      method: 'PATCH',
+      token: master.token,
+      body: {
+        tournamentPredictionsDeadline: new Date(Date.now() - 60 * 1000).toISOString(),
+      },
+    });
+    expect(update.status).toBe(200);
+
+    const locked = await requestJson('/predictions/tournament', {
+      token: player.token,
+      body: { champion: { code: 'ESP' } },
+    });
+    expect(locked.status).toBe(400);
+    expect(locked.body).toEqual({ error: 'Tournament predictions are locked.' });
   });
 });

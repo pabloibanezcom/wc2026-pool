@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { getMe, loginDev, loginWithGoogle, loginWithPassword, updateMe } from './auth';
 import { createLeague, fetchLeague, fetchMemberPredictions, fetchMyLeagues, joinLeague, leaveLeague, notifyLeagueMembers } from './leagues';
 import { fetchMatch, fetchMatches } from './matches';
+import { fetchPollConfig } from './config';
 import { apiClient } from './client';
 
 vi.mock('./client', () => ({
@@ -63,6 +64,17 @@ describe('API route helpers', () => {
     mockedApiClient.get.mockResolvedValueOnce({ data: matchPayload });
     await expect(fetchMatch('match-1')).resolves.toBe(matchPayload);
     expect(mockedApiClient.get).toHaveBeenCalledWith('/matches/match-1');
+  });
+
+  it('fetches poll configuration', async () => {
+    const config = {
+      groupPredictionsDeadline: '2026-06-11T00:00:00.000Z',
+      tournamentPredictionsDeadline: '2026-06-11T00:00:00.000Z',
+    };
+    mockedApiClient.get.mockResolvedValueOnce({ data: { config } });
+
+    await expect(fetchPollConfig()).resolves.toBe(config);
+    expect(mockedApiClient.get).toHaveBeenCalledWith('/config/poll');
   });
 
   it('calls league endpoints and unwraps response data', async () => {

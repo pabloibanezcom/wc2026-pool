@@ -76,6 +76,16 @@ EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=
 
 Use the Google Web client ID for both `GOOGLE_CLIENT_ID` on the API and `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` in the app.
 
+Optional poll deadline defaults:
+
+```
+POLL_PICKS_DEADLINE=
+POLL_GROUP_PREDICTIONS_DEADLINE=
+POLL_TOURNAMENT_PREDICTIONS_DEADLINE=
+```
+
+Use `POLL_PICKS_DEADLINE` when group standings and tournament picks share one deadline. Use the more specific variables when they need separate defaults. Master users can override these values through the global poll config stored in MongoDB.
+
 3. Seed match data:
 
 ```bash

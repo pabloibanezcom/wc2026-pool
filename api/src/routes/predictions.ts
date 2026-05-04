@@ -16,6 +16,7 @@ import {
   getTeamCatalog,
 } from '../services/countryTeamService';
 import { currentDate } from '../utils/time';
+import { isGroupPredictionsLocked, isTournamentPredictionsLocked } from '../services/pollConfigService';
 
 const router = Router();
 
@@ -175,11 +176,6 @@ router.post('/groups', authMiddleware, async (req: AuthRequest, res: Response): 
       return;
     }
 
-    if (groupMatches.some((match) => currentDate() >= match.utcDate)) {
-      res.status(400).json({ error: 'This group has already started. Predictions are locked.' });
-      return;
-    }
-
     const knownTeamCodes = new Set<string>();
     for (const match of groupMatches) {
       const { homeTeamCode, awayTeamCode } = getMatchTeamCodes(match);
@@ -192,6 +188,11 @@ router.post('/groups', authMiddleware, async (req: AuthRequest, res: Response): 
       normalizedTeamCodes.some((code) => !knownTeamCodes.has(code))
     ) {
       res.status(400).json({ error: 'Group prediction must include all confirmed teams in this group.' });
+      return;
+    }
+
+    if (await isGroupPredictionsLocked()) {
+      res.status(400).json({ error: 'Group predictions are locked.' });
       return;
     }
 
@@ -308,6 +309,11 @@ router.get('/tournament', authMiddleware, async (req: AuthRequest, res: Response
 
 router.post('/tournament', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    if (await isTournamentPredictionsLocked()) {
+      res.status(400).json({ error: 'Tournament predictions are locked.' });
+      return;
+    }
+
     const data = tournamentPredictionSchema.parse(req.body);
     const update = TEAM_PICK_FIELDS.reduce<Record<string, string | undefined>>((acc, [pickField, codeField]) => {
       acc[codeField] = data[pickField]?.code ? normalizeCode(data[pickField].code) : undefined;

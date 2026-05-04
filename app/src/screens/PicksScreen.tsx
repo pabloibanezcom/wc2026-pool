@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { fetchMatches } from '../api/matches';
+import { fetchPollConfig, PollConfig } from '../api/config';
 import {
   fetchMyGroupPredictions,
   fetchMyPredictions,
@@ -109,6 +110,10 @@ function getGroupsFromMatches(matches: Match[]): GroupStanding[] {
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
+function isPastDeadline(deadline: string | null | undefined) {
+  return !!deadline && Date.now() >= new Date(deadline).getTime();
+}
+
 export default function PicksScreen() {
   const { language, t, locale } = useI18n();
   const scrollRef = useRef<ScrollView>(null);
@@ -123,6 +128,7 @@ export default function PicksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isDraggingGroupTeam, setIsDraggingGroupTeam] = useState(false);
+  const [pollConfig, setPollConfig] = useState<PollConfig | null>(null);
 
   const [tournamentPicks, setTournamentPicks] = useState<TournamentPicks>({});
 
@@ -131,14 +137,16 @@ export default function PicksScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [m, p, gp] = await Promise.all([
+      const [m, p, gp, config] = await Promise.all([
         fetchMatches({}),
         fetchMyPredictions(),
         fetchMyGroupPredictions(),
+        fetchPollConfig(),
       ]);
       setMatches(m);
       setPredictions(p);
       setGroupPredictions(gp);
+      setPollConfig(config);
     } catch {
       // silently fail
     } finally {
@@ -210,6 +218,8 @@ export default function PicksScreen() {
   );
   const matchGroups = useMemo(() => groupMatchesByDay(shown, locale), [locale, shown]);
   const groupStandings = useMemo(() => getGroupsFromMatches(matches), [matches]);
+  const groupPredictionsLocked = isPastDeadline(pollConfig?.groupPredictionsDeadline);
+  const tournamentPredictionsLocked = isPastDeadline(pollConfig?.tournamentPredictionsDeadline);
 
   const handleSave = async (matchId: string, score: [number, number], qualifier?: 'HOME' | 'AWAY' | null) => {
     try {
@@ -221,6 +231,8 @@ export default function PicksScreen() {
   };
 
   const handleGroupOrder = async (groupId: string, orderedTeams: TeamInfo[]) => {
+    if (groupPredictionsLocked) return;
+
     setGroupPredictions((prev) => {
       const existing = prev.find((prediction) => prediction.group === groupId);
       const optimistic: GroupPrediction = existing
@@ -308,7 +320,7 @@ export default function PicksScreen() {
         {tab === 'finals' ? (
           <TournamentPicksSection
             picks={tournamentPicks}
-            onPickChange={handleTournamentPick}
+            onPickChange={tournamentPredictionsLocked ? undefined : handleTournamentPick}
           />
         ) : tab === 'groups' ? (
           <View style={styles.groupCards}>
@@ -317,7 +329,7 @@ export default function PicksScreen() {
                 key={group.id}
                 group={group}
                 order={groupPredMap[group.id]?.orderedTeams ?? group.teams}
-                onOrderChange={handleGroupOrder}
+                onOrderChange={groupPredictionsLocked ? undefined : handleGroupOrder}
                 onDragStateChange={setIsDraggingGroupTeam}
               />
             ))}
@@ -390,12 +402,13 @@ function GroupCard({
 }: {
   group: GroupStanding;
   order: TeamInfo[];
-  onOrderChange: (groupId: string, orderedTeams: TeamInfo[]) => void;
+  onOrderChange?: (groupId: string, orderedTeams: TeamInfo[]) => void;
   onDragStateChange: (isDragging: boolean) => void;
 }) {
   const { t } = useI18n();
   const moveTeam = (index: number, targetIndex: number) => {
     if (targetIndex < 0 || targetIndex >= order.length || targetIndex === index) return;
+    if (!onOrderChange) return;
     const next = [...order];
     const [team] = next.splice(index, 1);
     next.splice(targetIndex, 0, team);
@@ -422,6 +435,7 @@ function GroupCard({
             potentialQualifier={potentialQualifier}
             onMove={moveTeam}
             onDragStateChange={onDragStateChange}
+            disabled={!onOrderChange}
           />
         );
       })}
@@ -439,6 +453,7 @@ function DraggableGroupTeamRow({
   potentialQualifier,
   onMove,
   onDragStateChange,
+  disabled,
 }: {
   team: TeamInfo;
   index: number;
@@ -447,6 +462,7 @@ function DraggableGroupTeamRow({
   potentialQualifier: boolean;
   onMove: (fromIndex: number, toIndex: number) => void;
   onDragStateChange: (isDragging: boolean) => void;
+  disabled?: boolean;
 }) {
   const translateY = React.useRef(new Animated.Value(0)).current;
   const [isDragging, setIsDragging] = useState(false);
@@ -454,8 +470,8 @@ function DraggableGroupTeamRow({
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dy) > 2,
+        onStartShouldSetPanResponder: () => !disabled,
+        onMoveShouldSetPanResponder: (_event, gesture) => !disabled && Math.abs(gesture.dy) > 2,
         onPanResponderGrant: () => {
           setIsDragging(true);
           onDragStateChange(true);
@@ -492,7 +508,7 @@ function DraggableGroupTeamRow({
           });
         },
       }),
-    [count, index, onDragStateChange, onMove, translateY],
+    [count, disabled, index, onDragStateChange, onMove, translateY],
   );
 
   return (

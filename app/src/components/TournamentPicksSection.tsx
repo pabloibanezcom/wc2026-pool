@@ -25,7 +25,7 @@ import { useI18n } from '../i18n';
 
 interface TournamentPicksSectionProps {
   picks: TournamentPicks;
-  onPickChange: (key: keyof TournamentPicks, value: TeamOption | PlayerOption) => void;
+  onPickChange?: (key: keyof TournamentPicks, value: TeamOption | PlayerOption) => void;
 }
 
 type ActivePicker =
@@ -72,13 +72,14 @@ function SlotCard({
   pick?: TeamOption;
   label: string;
   icon: string;
-  onPress: () => void;
+  onPress?: () => void;
 }) {
   const { language, t } = useI18n();
   return (
     <TouchableOpacity
       style={[styles.slotCard, !pick && styles.slotCardEmpty]}
       onPress={onPress}
+      disabled={!onPress}
       activeOpacity={0.75}
     >
       <View style={[styles.slotIcon, pick ? styles.slotIconFilled : styles.slotIconEmpty]}>
@@ -114,13 +115,14 @@ function AwardCard({
   icon: string;
   accentColor?: string;
   accentBg?: string;
-  onPress: () => void;
+  onPress?: () => void;
 }) {
   const { language, t } = useI18n();
   return (
     <TouchableOpacity
       style={[styles.slotCard, !pick && styles.awardCardEmpty]}
       onPress={onPress}
+      disabled={!onPress}
       activeOpacity={0.75}
     >
       <View style={[styles.slotIcon, pick ? { backgroundColor: accentBg } : styles.slotIconEmpty]}>
@@ -432,10 +434,10 @@ export default function TournamentPicksSection({
   const totalCount = TOURNAMENT_SLOT_KEYS.length;
 
   const openTeam = (key: keyof TournamentPicks, title: string) =>
-    setActivePicker({ type: 'team', key, title });
+    onPickChange && setActivePicker({ type: 'team', key, title });
 
   const openPlayer = (key: keyof TournamentPicks, title: string, players: PlayerOption[]) =>
-    setActivePicker({ type: 'player', key, title, players });
+    onPickChange && setActivePicker({ type: 'player', key, title, players });
 
   return (
     <View style={styles.container}>
@@ -521,7 +523,7 @@ export default function TournamentPicksSection({
         <TeamPickerModal
           title={activePicker.title}
           selected={picks[activePicker.key] as TeamOption | undefined}
-          onSelect={(team) => onPickChange(activePicker.key, team)}
+          onSelect={(team) => onPickChange?.(activePicker.key, team)}
           onClose={() => setActivePicker(null)}
         />
       )}
@@ -530,7 +532,7 @@ export default function TournamentPicksSection({
           title={activePicker.title}
           players={activePicker.players}
           selected={picks[activePicker.key] as PlayerOption | undefined}
-          onSelect={(player) => onPickChange(activePicker.key, player)}
+          onSelect={(player) => onPickChange?.(activePicker.key, player)}
           onClose={() => setActivePicker(null)}
         />
       )}

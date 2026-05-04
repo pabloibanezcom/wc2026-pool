@@ -9,6 +9,7 @@ import predictionRoutes from './routes/predictions';
 import leagueRoutes from './routes/leagues';
 import adminRoutes from './routes/admin';
 import notificationRoutes from './routes/notifications';
+import configRoutes from './routes/config';
 import { resolveRuntimeScenario } from './config/scenarioRuntime';
 import { runWithRequestContext } from './utils/requestContext';
 
@@ -56,5 +57,6 @@ app.use('/predictions', predictionRoutes);
 app.use('/leagues', leagueRoutes);
 app.use('/admin', adminRoutes);
 app.use('/notifications', notificationRoutes);
+app.use('/config', configRoutes);
 
 app.use(errorHandler);
