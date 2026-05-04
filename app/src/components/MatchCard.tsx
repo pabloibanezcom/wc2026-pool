@@ -328,7 +328,7 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
         <View style={styles.header}>
           <Text style={styles.meta}>
             {match.group ? t('common.group', { group: match.group }) : match.stage} · {formatDate(match.utcDate, locale)}
-            {(state === 'empty' || state === 'predicted') ? ` · ${formatTime(match.utcDate, locale)}` : ''}
+            {' · '}{formatTime(match.utcDate, locale)}
           </Text>
           {action}
         </View>
