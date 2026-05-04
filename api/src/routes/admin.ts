@@ -78,7 +78,7 @@ router.post('/scenarios/seed', syncAuthMiddleware, async (req: Request, res: Res
 
     res.json({
       ok: true,
-      scenarios: results,
+      scenarios: results.map(({ mongodbUri, ...result }) => result),
       ranAt: new Date().toISOString(),
     });
   } catch (error) {
