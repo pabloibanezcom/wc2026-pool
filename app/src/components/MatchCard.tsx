@@ -296,6 +296,8 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
     );
   } else if (result) {
     action = <Badge result={result} />;
+  } else if (state === 'finished' && !prediction) {
+    action = <Badge result="wrong" />;
   } else {
     action = <Text style={styles.finalText}>{t('common.final')}</Text>;
   }
@@ -357,6 +359,8 @@ export default function MatchCard({ match, prediction, result, onPress }: Props)
                   </Text>
                 ) : state === 'live' ? (
                   <Text style={styles.pickText}>{t('common.inProgress')}</Text>
+                ) : state === 'finished' ? (
+                  <Text style={styles.pickText}>{t('matchCard.noPrediction')}</Text>
                 ) : null}
               </>
             )}

@@ -174,6 +174,7 @@ const translations: Record<Language, TranslationMap> = {
     'matchCard.teamsTbd': 'Teams TBD',
     'matchCard.predicted': 'Predicted',
     'matchCard.pickQualifier': '⚠ Pick who advances',
+    'matchCard.noPrediction': 'No pick',
     'matchCard.advances': ({ code }) => `${code} advances →`,
 
     'predictionSheet.save': 'Save Prediction',
@@ -467,6 +468,7 @@ const translations: Record<Language, TranslationMap> = {
     'matchCard.teamsTbd': 'Equipos P/D',
     'matchCard.predicted': 'Pronosticado',
     'matchCard.pickQualifier': '⚠ Elige quién pasa',
+    'matchCard.noPrediction': 'Sin pronóstico',
     'matchCard.advances': ({ code }) => `${code} pasa →`,
 
     'predictionSheet.save': 'Guardar pronóstico',
