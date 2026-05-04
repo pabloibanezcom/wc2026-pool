@@ -6,6 +6,8 @@ import { currentDate } from '../utils/time';
 export interface SerializedPollConfig {
   groupPredictionsDeadline: string | null;
   tournamentPredictionsDeadline: string | null;
+  groupPredictionsLocked: boolean;
+  tournamentPredictionsLocked: boolean;
 }
 
 export interface PollConfigUpdate {
@@ -39,9 +41,13 @@ export function serializePollConfig(config: {
   groupPredictionsDeadline: Date | null;
   tournamentPredictionsDeadline: Date | null;
 }): SerializedPollConfig {
+  const now = currentDate();
+
   return {
     groupPredictionsDeadline: config.groupPredictionsDeadline?.toISOString() ?? null,
     tournamentPredictionsDeadline: config.tournamentPredictionsDeadline?.toISOString() ?? null,
+    groupPredictionsLocked: !!config.groupPredictionsDeadline && now >= config.groupPredictionsDeadline,
+    tournamentPredictionsLocked: !!config.tournamentPredictionsDeadline && now >= config.tournamentPredictionsDeadline,
   };
 }
 

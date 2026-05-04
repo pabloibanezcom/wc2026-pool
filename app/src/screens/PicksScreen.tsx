@@ -110,10 +110,6 @@ function getGroupsFromMatches(matches: Match[]): GroupStanding[] {
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
-function isPastDeadline(deadline: string | null | undefined) {
-  return !!deadline && Date.now() >= new Date(deadline).getTime();
-}
-
 export default function PicksScreen() {
   const { language, t, locale } = useI18n();
   const scrollRef = useRef<ScrollView>(null);
@@ -218,8 +214,8 @@ export default function PicksScreen() {
   );
   const matchGroups = useMemo(() => groupMatchesByDay(shown, locale), [locale, shown]);
   const groupStandings = useMemo(() => getGroupsFromMatches(matches), [matches]);
-  const groupPredictionsLocked = isPastDeadline(pollConfig?.groupPredictionsDeadline);
-  const tournamentPredictionsLocked = isPastDeadline(pollConfig?.tournamentPredictionsDeadline);
+  const groupPredictionsLocked = !!pollConfig?.groupPredictionsLocked;
+  const tournamentPredictionsLocked = !!pollConfig?.tournamentPredictionsLocked;
 
   const handleSave = async (matchId: string, score: [number, number], qualifier?: 'HOME' | 'AWAY' | null) => {
     try {

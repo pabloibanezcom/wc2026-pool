@@ -3,6 +3,8 @@ import { apiClient } from './client';
 export interface PollConfig {
   groupPredictionsDeadline: string | null;
   tournamentPredictionsDeadline: string | null;
+  groupPredictionsLocked: boolean;
+  tournamentPredictionsLocked: boolean;
 }
 
 export async function fetchPollConfig(): Promise<PollConfig> {
