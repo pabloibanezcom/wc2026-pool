@@ -22,14 +22,22 @@ import {
   submitGroupPrediction,
   submitPrediction,
 } from '../api/predictions';
-import { GroupPrediction, Match, Prediction, TeamInfo } from '../types';
+import {
+  GroupPrediction,
+  Match,
+  PlayerOption,
+  Prediction,
+  TeamInfo,
+  TeamOption,
+  TournamentCatalogTeam,
+  TournamentPicks,
+} from '../types';
 import PredictionSheet from '../components/PredictionSheet';
 import ResultSheet from '../components/ResultSheet';
 import MatchCard, { hasTbdTeam } from '../components/MatchCard';
 import LoadingView from '../components/ui/LoadingView';
 import Flag from '../components/ui/Flag';
 import TournamentPicksSection from '../components/TournamentPicksSection';
-import { TournamentCatalogTeam, TournamentPicks, PlayerOption, TeamOption } from '../data/tournamentData';
 import { colors, fonts } from '../theme';
 import { useI18n } from '../i18n';
 import { isPredictionLocked } from '../utils/prediction';

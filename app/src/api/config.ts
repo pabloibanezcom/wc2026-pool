@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { TournamentCatalogTeam } from '../data/tournamentData';
+import { TournamentCatalogTeam } from '../types';
 
 export interface PollConfig {
   groupPredictionsDeadline: string | null;

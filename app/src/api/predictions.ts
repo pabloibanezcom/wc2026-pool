@@ -1,6 +1,5 @@
 import { apiClient } from './client';
-import { GroupPrediction, Prediction, TeamInfo } from '../types';
-import { TournamentPicks } from '../data/tournamentData';
+import { GroupPrediction, Prediction, TeamInfo, TournamentPicks } from '../types';
 
 function normalizePrediction(prediction: Prediction & { matchId: unknown }): Prediction {
   let normalizedMatchId = '';

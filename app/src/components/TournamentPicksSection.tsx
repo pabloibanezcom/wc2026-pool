@@ -18,7 +18,7 @@ import {
   TournamentCatalogTeam,
   TournamentPicks,
   TOURNAMENT_SLOT_KEYS,
-} from '../data/tournamentData';
+} from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { useI18n } from '../i18n';
 
