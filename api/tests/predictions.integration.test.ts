@@ -129,6 +129,11 @@ describe('match predictions', () => {
       externalId: 999,
       utcDate: new Date(Date.now() - 60 * 1000),
     });
+    const live = await createMatch({
+      externalId: 1000,
+      status: 'LIVE',
+      utcDate: new Date(Date.now() + 60 * 60 * 1000),
+    });
 
     const invalidPayload = await requestJson('/predictions', {
       token,
@@ -156,7 +161,14 @@ describe('match predictions', () => {
       body: { matchId: String(started._id), homeGoals: 1, awayGoals: 1 },
     });
     expect(locked.status).toBe(400);
-    expect(locked.body).toEqual({ error: 'Predictions are locked 15 minutes before kickoff.' });
+    expect(locked.body).toEqual({ error: 'Predictions are locked 5 minutes before kickoff.' });
+
+    const liveLocked = await requestJson('/predictions', {
+      token,
+      body: { matchId: String(live._id), homeGoals: 1, awayGoals: 1 },
+    });
+    expect(liveLocked.status).toBe(400);
+    expect(liveLocked.body).toEqual({ error: 'Predictions are locked for this match.' });
   });
 
   it('only reveals other users predictions after kickoff', async () => {

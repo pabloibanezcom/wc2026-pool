@@ -244,6 +244,11 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
       return;
     }
 
+    if (match.status !== 'SCHEDULED') {
+      res.status(400).json({ error: 'Predictions are locked for this match.' });
+      return;
+    }
+
     const lockTime = new Date(match.utcDate.getTime() - LOCK_MINUTES_BEFORE * 60 * 1000);
     if (currentDate() >= lockTime) {
       res.status(400).json({ error: 'Predictions are locked 5 minutes before kickoff.' });

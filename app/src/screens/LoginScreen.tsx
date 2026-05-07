@@ -21,6 +21,7 @@ import { colors, spacing, borderRadius } from '../theme';
 import { useI18n } from '../i18n';
 import { getGoogleClientIds, getGoogleIdToken, hasGoogleClientIdForPlatform } from '../auth/googleConfig';
 import { API_URL } from '../api/client';
+import ApiScenarioSelector from '../components/ApiScenarioSelector';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -111,6 +112,8 @@ export default function LoginScreen() {
             <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
           </View>
         </View>
+
+        <ApiScenarioSelector />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 

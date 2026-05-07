@@ -22,6 +22,7 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 import NotifyModal from '../components/NotifyModal';
 import { apiClient } from '../api/client';
 import { Language, useI18n } from '../i18n';
+import ApiScenarioSelector from '../components/ApiScenarioSelector';
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children.toUpperCase()}</Text>;
@@ -140,6 +141,11 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>{label}</Text>
             </View>
           ))}
+        </View>
+
+        <View>
+          <SectionLabel>{t('scenario.label')}</SectionLabel>
+          <ApiScenarioSelector />
         </View>
 
         {/* Notifications */}
