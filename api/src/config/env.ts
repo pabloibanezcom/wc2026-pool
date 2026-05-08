@@ -22,6 +22,7 @@ const envSchema = z.object({
   SEED_DEV_DATA: envBoolean,
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
   MASTER_USER_EMAIL: z.string().default(''),
+  LEAGUE_CREATOR_EMAILS: z.string().default(''),
   GOOGLE_CLIENT_ID: z.string().default(''),
   FOOTBALL_DATA_API_KEY: z.string().default(''),
   TOURNAMENT_NOW: z.string().default(''),

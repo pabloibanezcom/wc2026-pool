@@ -6,6 +6,7 @@ export interface User {
   avatarUrl: string;
   totalPoints: number;
   isMaster?: boolean;
+  canCreateLeagues?: boolean;
 }
 
 export type MatchStage =

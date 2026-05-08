@@ -37,6 +37,19 @@ function isMasterEmail(email: string): boolean {
   return !!env.MASTER_USER_EMAIL && normalizeEmail(env.MASTER_USER_EMAIL) === normalizeEmail(email);
 }
 
+function isLeagueCreatorEmail(email: string): boolean {
+  const allowedEmails = env.LEAGUE_CREATOR_EMAILS
+    .split(',')
+    .map(normalizeEmail)
+    .filter(Boolean);
+
+  return allowedEmails.includes(normalizeEmail(email));
+}
+
+export function canUserCreateLeagues(user: { email: string; isMaster?: boolean; canCreateLeagues?: boolean }): boolean {
+  return !!user.isMaster || !!user.canCreateLeagues || isLeagueCreatorEmail(user.email);
+}
+
 function signToken(user: { _id: unknown; email: string; isMaster?: boolean }): string {
   return jwt.sign(
     { userId: String(user._id), email: user.email, isMaster: !!user.isMaster },
@@ -51,6 +64,7 @@ function serializeUser(user: {
   name: string;
   avatarUrl: string;
   isMaster?: boolean;
+  canCreateLeagues?: boolean;
   totalPoints?: number;
 }) {
   return {
@@ -59,6 +73,7 @@ function serializeUser(user: {
     name: user.name,
     avatarUrl: user.avatarUrl,
     isMaster: !!user.isMaster,
+    canCreateLeagues: canUserCreateLeagues(user),
     totalPoints: user.totalPoints ?? 0,
   };
 }

@@ -1,12 +1,13 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import crypto from 'crypto';
-import { League } from '../models/League';
+import { League, LEAGUE_MAX_MEMBERS } from '../models/League';
 import { Match } from '../models/Match';
 import { Prediction } from '../models/Prediction';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { User } from '../models/User';
 import { getRequestLanguage, hydrateMatches } from '../services/countryTeamService';
+import { canUserCreateLeagues } from './auth';
 
 const router = Router();
 
@@ -42,8 +43,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
     const { name } = createLeagueSchema.parse(req.body);
     const user = await User.findById(req.userId);
 
-    if (!user?.isMaster) {
-      res.status(403).json({ error: 'Only the master user can create leagues' });
+    if (!user || !canUserCreateLeagues(user)) {
+      res.status(403).json({ error: 'You are not allowed to create leagues' });
       return;
     }
 
@@ -51,6 +52,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
       name,
       inviteCode: generateInviteCode(),
       ownerId: req.userId,
+      maxMembers: LEAGUE_MAX_MEMBERS,
       members: [{ userId: req.userId, isAdmin: true }],
     });
 
@@ -74,7 +76,8 @@ router.post('/join', authMiddleware, async (req: AuthRequest, res: Response): Pr
       return;
     }
 
-    if (league.members.length >= league.maxMembers) {
+    const memberLimit = Math.min(league.maxMembers ?? LEAGUE_MAX_MEMBERS, LEAGUE_MAX_MEMBERS);
+    if (league.members.length >= memberLimit) {
       res.status(400).json({ error: 'League is full' });
       return;
     }
@@ -132,6 +135,22 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
   });
 
   res.json({ league });
+});
+
+router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const league = await League.findById(req.params.id);
+  if (!league) {
+    res.status(404).json({ error: 'League not found' });
+    return;
+  }
+
+  if (league.ownerId.toString() !== req.userId) {
+    res.status(403).json({ error: 'Only the league owner can delete this league' });
+    return;
+  }
+
+  await league.deleteOne();
+  res.json({ message: 'League deleted successfully' });
 });
 
 router.post('/:id/admins', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {

@@ -421,6 +421,7 @@
       "item": [
         {
           "name": "Create League",
+          "description": "Creates a league with a maximum of 50 members. Requires the authenticated user to be a master user, have canCreateLeagues=true, or have their email listed in LEAGUE_CREATOR_EMAILS.",
           "request": {
             "method": "POST",
             "header": [
@@ -505,6 +506,7 @@
         },
         {
           "name": "Join League",
+          "description": "Joins the authenticated user to a league by invite code. Returns 400 \"League is full\" when the league already has 50 members.",
           "request": {
             "method": "POST",
             "header": [
@@ -595,6 +597,29 @@
                 "leagues",
                 "{{leagueId}}",
                 "leave"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete League (Owner only)",
+          "description": "Permanently deletes a league. Requires the authenticated user to be the league owner.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{wc2026_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}"
               ]
             }
           }

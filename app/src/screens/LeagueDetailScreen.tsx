@@ -6,13 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
   Share,
   RefreshControl,
 } from 'react-native';
 import NotifyModal from '../components/NotifyModal';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { fetchLeague, notifyLeagueMembers } from '../api/leagues';
+import { CommonActions, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { deleteLeague, fetchLeague, notifyLeagueMembers } from '../api/leagues';
 import { League, LeagueMember } from '../types';
 import { colors, fonts } from '../theme';
 import Avatar from '../components/ui/Avatar';
@@ -34,6 +35,20 @@ type RouteParams = { LeagueDetail: { leagueId: string } };
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children.toUpperCase()}</Text>;
+}
+
+function getApiErrorMessage(error: any, fallback: string): string {
+  const data = error?.response?.data;
+  if (data && typeof data === 'object' && typeof data.error === 'string') {
+    return data.error;
+  }
+  if (typeof data === 'string' && data.trim()) {
+    return data.trim();
+  }
+  if (typeof error?.message === 'string' && error.message) {
+    return error.message;
+  }
+  return fallback;
 }
 
 export default function LeagueDetailScreen() {
@@ -96,6 +111,35 @@ export default function LeagueDetailScreen() {
   const accent = colors.accent;
   const accentDim = colors.accentDim;
   const isAdmin = me?.isAdmin || league.ownerId?.id === user?.id || (league.ownerId as any)?._id === user?.id;
+  const isOwner = league.ownerId?.id === user?.id || (league.ownerId as any)?._id === user?.id;
+
+  const handleDeleteLeague = () => {
+    Alert.alert(
+      t('league.deleteTitle'),
+      t('league.deleteConfirm', { name: league.name }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('league.deleteAction'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteLeague(league._id);
+              setLeague(null);
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'LeagueList' }],
+                })
+              );
+            } catch (err: any) {
+              Alert.alert(t('common.error'), getApiErrorMessage(err, t('league.deleteFailed')));
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -128,6 +172,12 @@ export default function LeagueDetailScreen() {
         {isAdmin && (
           <TouchableOpacity style={styles.notifyBtn} onPress={() => setNotifyModalVisible(true)} activeOpacity={0.85}>
             <Text style={styles.notifyBtnText}>{t('league.notifyMembers')}</Text>
+          </TouchableOpacity>
+        )}
+
+        {isOwner && (
+          <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteLeague} activeOpacity={0.85}>
+            <Text style={styles.deleteBtnText}>{t('league.deleteAction')}</Text>
           </TouchableOpacity>
         )}
 
@@ -361,6 +411,20 @@ const styles = StyleSheet.create({
   },
   notifyBtnText: {
     color: colors.accent,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteBtn: {
+    backgroundColor: 'rgba(226,59,74,0.08)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(226,59,74,0.25)',
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  deleteBtnText: {
+    color: colors.danger,
     fontFamily: fonts.bodyMedium,
     fontSize: 14,
     fontWeight: '600',

@@ -17,6 +17,7 @@ export default function LeaguesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<any>();
+  const canCreateLeagues = !!(user?.canCreateLeagues || user?.isMaster);
 
   const loadLeagues = async () => {
     try {
@@ -68,9 +69,16 @@ export default function LeaguesScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
           }
           ListFooterComponent={
-            <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('JoinLeague')}>
-              <Text style={styles.joinButtonText}>{t('leagues.joinLeague')}</Text>
-            </TouchableOpacity>
+            <View style={styles.actions}>
+              {canCreateLeagues && (
+                <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateLeague')}>
+                  <Text style={styles.createButtonText}>{t('leagues.createLeague')}</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('JoinLeague')}>
+                <Text style={styles.joinButtonText}>{t('leagues.joinLeague')}</Text>
+              </TouchableOpacity>
+            </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -91,6 +99,14 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.display },
   subtitle: { color: colors.muted, fontSize: 13, marginTop: 2, fontFamily: fonts.body },
 
+  actions: { gap: 10, marginTop: 14 },
+  createButton: {
+    backgroundColor: colors.accent,
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  createButtonText: { color: '#fff', fontWeight: '700', fontSize: 13, fontFamily: fonts.bodyMedium },
   joinButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -98,7 +114,6 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 8,
   },
   joinButtonText: { color: colors.text, fontWeight: '600', fontSize: 13, fontFamily: fonts.bodyMedium },
 

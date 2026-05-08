@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
+export const LEAGUE_MAX_MEMBERS = 50;
+
 export interface ILeagueMember {
   userId: Types.ObjectId;
   joinedAt: Date;
@@ -31,7 +33,7 @@ const leagueSchema = new Schema<ILeague>(
     inviteCode: { type: String, required: true, unique: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     members: [leagueMemberSchema],
-    maxMembers: { type: Number, default: 50 },
+    maxMembers: { type: Number, default: LEAGUE_MAX_MEMBERS, min: 1, max: LEAGUE_MAX_MEMBERS },
   },
   { timestamps: true }
 );

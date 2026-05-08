@@ -123,7 +123,12 @@ export default function RootNavigator() {
             <Stack.Screen
               name="CreateLeague"
               component={CreateLeagueScreen}
-              options={{ headerShown: true, title: t('nav.createLeague'), presentation: 'modal', animation: 'slide_from_bottom' }}
+              options={{
+                headerShown: false,
+                presentation: 'transparentModal',
+                animation: 'fade',
+                contentStyle: { backgroundColor: 'transparent' },
+              }}
             />
             <Stack.Screen
               name="JoinLeague"

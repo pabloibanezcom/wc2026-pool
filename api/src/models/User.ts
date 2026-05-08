@@ -7,6 +7,7 @@ export interface IUser extends Document {
   avatarUrl: string;
   passwordHash: string | null;
   isMaster: boolean;
+  canCreateLeagues: boolean;
   totalPoints: number;
   createdAt: Date;
   updatedAt: Date;
@@ -20,6 +21,7 @@ const userSchema = new Schema<IUser>(
     avatarUrl: { type: String, default: '' },
     passwordHash: { type: String, default: null, select: false },
     isMaster: { type: Boolean, default: false },
+    canCreateLeagues: { type: Boolean, default: false },
     totalPoints: { type: Number, default: 0 },
   },
   { timestamps: true }

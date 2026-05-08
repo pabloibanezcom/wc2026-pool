@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { getMe, loginDev, loginWithGoogle, loginWithPassword, updateMe } from './auth';
-import { createLeague, fetchLeague, fetchMemberPredictions, fetchMyLeagues, joinLeague, leaveLeague, notifyLeagueMembers } from './leagues';
+import { createLeague, deleteLeague, fetchLeague, fetchMemberPredictions, fetchMyLeagues, joinLeague, leaveLeague, notifyLeagueMembers } from './leagues';
 import { fetchMatch, fetchMatches } from './matches';
 import { fetchPollConfig } from './config';
 import { apiClient } from './client';
@@ -102,6 +102,10 @@ describe('API route helpers', () => {
     mockedApiClient.delete.mockResolvedValueOnce({ data: {} });
     await expect(leaveLeague('league-1')).resolves.toBeUndefined();
     expect(mockedApiClient.delete).toHaveBeenCalledWith('/leagues/league-1/leave');
+
+    mockedApiClient.delete.mockResolvedValueOnce({ data: {} });
+    await expect(deleteLeague('league-1')).resolves.toBeUndefined();
+    expect(mockedApiClient.delete).toHaveBeenCalledWith('/leagues/league-1');
 
     mockedApiClient.post.mockResolvedValueOnce({ data: {} });
     await expect(notifyLeagueMembers('league-1', 'Title', 'Body')).resolves.toBeUndefined();

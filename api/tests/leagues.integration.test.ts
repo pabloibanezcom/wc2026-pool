@@ -1,8 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { clearDatabase, requestJson, seedTestCountryTeams, startIntegrationServer, stopIntegrationServer } from './helpers/integration';
+import { Types } from 'mongoose';
 import { League } from '../src/models/League';
 import { Match } from '../src/models/Match';
 import { Prediction } from '../src/models/Prediction';
+import { User } from '../src/models/User';
 
 beforeAll(async () => {
   await startIntegrationServer();
@@ -36,7 +38,7 @@ async function createLeague(token: string, name = 'Friends League') {
 }
 
 describe('league membership', () => {
-  it('allows only the master user to create leagues and lets users join/list/read them', async () => {
+  it('allows master and authorized users to create leagues and lets users join/list/read them', async () => {
     const master = await registerPlayer('master@wc2026.test', 'Master');
     const member = await registerPlayer('member@wc2026.test', 'Member');
 
@@ -48,6 +50,10 @@ describe('league membership', () => {
 
     const league = await createLeague(master.token);
     expect(league.inviteCode).toHaveLength(6);
+
+    await User.findByIdAndUpdate(member.user.id, { canCreateLeagues: true });
+    const memberLeague = await createLeague(member.token, 'Member League');
+    expect(memberLeague.inviteCode).toHaveLength(6);
 
     const joined = await requestJson<{ league: { members: unknown[] } }>('/leagues/join', {
       token: member.token,
@@ -65,7 +71,7 @@ describe('league membership', () => {
 
     const list = await requestJson<{ leagues: unknown[] }>('/leagues', { token: member.token });
     expect(list.status).toBe(200);
-    expect(list.body.leagues).toHaveLength(1);
+    expect(list.body.leagues).toHaveLength(2);
 
     const detail = await requestJson<{ league: { _id: string; members: unknown[] } }>(`/leagues/${league._id}`, {
       token: member.token,
@@ -101,6 +107,24 @@ describe('league membership', () => {
     });
     expect(full.status).toBe(400);
     expect(full.body).toEqual({ error: 'League is full' });
+
+    const oversizedLeague = await League.create({
+      name: 'Oversized',
+      inviteCode: 'BIG050',
+      ownerId: master.user.id,
+      maxMembers: 50,
+      members: [
+        { userId: master.user.id, isAdmin: true },
+        ...Array.from({ length: 49 }, () => ({ userId: new Types.ObjectId(), isAdmin: false })),
+      ],
+    });
+
+    const hardCapFull = await requestJson('/leagues/join', {
+      token: member.token,
+      body: { inviteCode: oversizedLeague.inviteCode },
+    });
+    expect(hardCapFull.status).toBe(400);
+    expect(hardCapFull.body).toEqual({ error: 'League is full' });
 
     const forbiddenDetail = await requestJson(`/leagues/${league._id}`, { token: outsider.token });
     expect(forbiddenDetail.status).toBe(403);
@@ -192,6 +216,28 @@ describe('league membership', () => {
 
     const stored = await League.findById(league._id).lean();
     expect(stored?.members.map((memberEntry) => String(memberEntry.userId))).toEqual([master.user.id]);
+  });
+
+  it('allows only the league owner to delete a league', async () => {
+    const master = await registerPlayer('master@wc2026.test', 'Master');
+    const member = await registerPlayer('member@wc2026.test', 'Member');
+    const league = await createLeague(master.token);
+    await requestJson('/leagues/join', { token: member.token, body: { inviteCode: league.inviteCode } });
+
+    const forbidden = await requestJson(`/leagues/${league._id}`, {
+      method: 'DELETE',
+      token: member.token,
+    });
+    expect(forbidden.status).toBe(403);
+
+    const deleted = await requestJson(`/leagues/${league._id}`, {
+      method: 'DELETE',
+      token: master.token,
+    });
+    expect(deleted.status).toBe(200);
+    expect(deleted.body).toEqual({ message: 'League deleted successfully' });
+
+    await expect(League.findById(league._id).lean()).resolves.toBeNull();
   });
 });
 
