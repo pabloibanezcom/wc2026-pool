@@ -81,6 +81,28 @@ describe('league membership', () => {
     expect(detail.body.league.members).toHaveLength(2);
   });
 
+  it('closes league creation one day before the tournament kickoff', async () => {
+    const master = await registerPlayer('master@wc2026.test', 'Master');
+    await Match.create({
+      externalId: 600,
+      stage: 'GROUP',
+      group: 'A',
+      matchday: 1,
+      homeTeamCode: 'ARG',
+      awayTeamCode: 'ESP',
+      utcDate: new Date(Date.now() + 12 * 60 * 60 * 1000),
+      status: 'SCHEDULED',
+    });
+
+    const closed = await requestJson('/leagues', {
+      token: master.token,
+      body: { name: 'Too Late' },
+    });
+
+    expect(closed.status).toBe(400);
+    expect(closed.body).toEqual({ error: 'League creation is closed.' });
+  });
+
   it('rejects missing leagues, full leagues, and non-member reads', async () => {
     const master = await registerPlayer('master@wc2026.test', 'Master');
     const member = await registerPlayer('member@wc2026.test', 'Member');

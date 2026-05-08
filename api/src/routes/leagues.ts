@@ -7,6 +7,7 @@ import { Prediction } from '../models/Prediction';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { User } from '../models/User';
 import { getRequestLanguage, hydrateMatches } from '../services/countryTeamService';
+import { isLeagueCreationLocked } from '../services/pollConfigService';
 import { canUserCreateLeagues } from './auth';
 
 const router = Router();
@@ -45,6 +46,11 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
 
     if (!user || !canUserCreateLeagues(user)) {
       res.status(403).json({ error: 'You are not allowed to create leagues' });
+      return;
+    }
+
+    if (await isLeagueCreationLocked()) {
+      res.status(400).json({ error: 'League creation is closed.' });
       return;
     }
 

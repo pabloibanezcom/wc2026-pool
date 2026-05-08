@@ -6,8 +6,10 @@ import { currentDate } from '../utils/time';
 export interface SerializedPollConfig {
   groupPredictionsDeadline: string | null;
   tournamentPredictionsDeadline: string | null;
+  leagueCreationDeadline: string | null;
   groupPredictionsLocked: boolean;
   tournamentPredictionsLocked: boolean;
+  leagueCreationLocked: boolean;
   serverTime: string;
 }
 
@@ -33,6 +35,13 @@ async function getDefaultPicksDeadline(): Promise<Date | null> {
   return firstGroupMatch?.utcDate ?? null;
 }
 
+export async function getLeagueCreationDeadline(): Promise<Date | null> {
+  const firstGroupMatch = await Match.findOne({ stage: 'GROUP' }).sort({ utcDate: 1 }).select('utcDate').lean();
+  if (!firstGroupMatch?.utcDate) return null;
+
+  return new Date(firstGroupMatch.utcDate.getTime() - 24 * 60 * 60 * 1000);
+}
+
 async function resolveDeadline(stored: Date | null | undefined, specificEnvValue: string, envName: string): Promise<Date | null> {
   if (stored !== undefined && stored !== null) return stored;
   return parseEnvDate(specificEnvValue, envName) ?? await getDefaultPicksDeadline();
@@ -41,14 +50,17 @@ async function resolveDeadline(stored: Date | null | undefined, specificEnvValue
 export function serializePollConfig(config: {
   groupPredictionsDeadline: Date | null;
   tournamentPredictionsDeadline: Date | null;
+  leagueCreationDeadline: Date | null;
 }): SerializedPollConfig {
   const now = currentDate();
 
   return {
     groupPredictionsDeadline: config.groupPredictionsDeadline?.toISOString() ?? null,
     tournamentPredictionsDeadline: config.tournamentPredictionsDeadline?.toISOString() ?? null,
+    leagueCreationDeadline: config.leagueCreationDeadline?.toISOString() ?? null,
     groupPredictionsLocked: !!config.groupPredictionsDeadline && now >= config.groupPredictionsDeadline,
     tournamentPredictionsLocked: !!config.tournamentPredictionsDeadline && now >= config.tournamentPredictionsDeadline,
+    leagueCreationLocked: !!config.leagueCreationDeadline && now >= config.leagueCreationDeadline,
     serverTime: now.toISOString(),
   };
 }
@@ -67,6 +79,7 @@ export async function getPollConfig() {
       env.POLL_TOURNAMENT_PREDICTIONS_DEADLINE,
       'POLL_TOURNAMENT_PREDICTIONS_DEADLINE'
     ),
+    leagueCreationDeadline: await getLeagueCreationDeadline(),
   };
 }
 
@@ -88,6 +101,7 @@ export async function updatePollConfig(update: PollConfigUpdate) {
       env.POLL_TOURNAMENT_PREDICTIONS_DEADLINE,
       'POLL_TOURNAMENT_PREDICTIONS_DEADLINE'
     ),
+    leagueCreationDeadline: await getLeagueCreationDeadline(),
   };
 }
 
@@ -99,4 +113,9 @@ export async function isGroupPredictionsLocked(): Promise<boolean> {
 export async function isTournamentPredictionsLocked(): Promise<boolean> {
   const { tournamentPredictionsDeadline } = await getPollConfig();
   return !!tournamentPredictionsDeadline && currentDate() >= tournamentPredictionsDeadline;
+}
+
+export async function isLeagueCreationLocked(): Promise<boolean> {
+  const leagueCreationDeadline = await getLeagueCreationDeadline();
+  return !!leagueCreationDeadline && currentDate() >= leagueCreationDeadline;
 }

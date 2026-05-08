@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { fetchMyLeagues } from '../api/leagues';
+import { fetchPollConfig, PollConfig } from '../api/config';
 import { League } from '../types';
 import { useAuthStore } from '../store/authStore';
 import LeagueCard from '../components/LeagueCard';
@@ -14,15 +15,20 @@ export default function LeaguesScreen() {
   const { t } = useI18n();
   const user = useAuthStore((s) => s.user);
   const [leagues, setLeagues] = useState<League[]>([]);
+  const [pollConfig, setPollConfig] = useState<PollConfig | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<any>();
-  const canCreateLeagues = !!(user?.canCreateLeagues || user?.isMaster);
+  const canCreateLeagues = !!(user?.canCreateLeagues || user?.isMaster) && !pollConfig?.leagueCreationLocked;
 
   const loadLeagues = async () => {
     try {
-      const data = await fetchMyLeagues();
+      const [data, config] = await Promise.all([
+        fetchMyLeagues(),
+        fetchPollConfig(),
+      ]);
       setLeagues(data);
+      setPollConfig(config);
     } catch {
       // handle error
     } finally {

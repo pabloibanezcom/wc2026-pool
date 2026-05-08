@@ -19,8 +19,11 @@ describe('config API helpers', () => {
     const config = {
       groupPredictionsDeadline: null,
       tournamentPredictionsDeadline: null,
+      leagueCreationDeadline: null,
       groupPredictionsLocked: false,
       tournamentPredictionsLocked: false,
+      leagueCreationLocked: false,
+      serverTime: '2026-06-09T12:00:00.000Z',
     };
     mockedGet.mockResolvedValueOnce({ data: { config } });
 

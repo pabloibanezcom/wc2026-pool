@@ -70,8 +70,11 @@ describe('API route helpers', () => {
     const config = {
       groupPredictionsDeadline: '2026-06-11T00:00:00.000Z',
       tournamentPredictionsDeadline: '2026-06-11T00:00:00.000Z',
+      leagueCreationDeadline: '2026-06-10T00:00:00.000Z',
       groupPredictionsLocked: false,
       tournamentPredictionsLocked: false,
+      leagueCreationLocked: false,
+      serverTime: '2026-06-09T12:00:00.000Z',
     };
     mockedApiClient.get.mockResolvedValueOnce({ data: { config } });
 

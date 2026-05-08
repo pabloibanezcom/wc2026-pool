@@ -421,7 +421,7 @@
       "item": [
         {
           "name": "Create League",
-          "description": "Creates a league with a maximum of 50 members. Requires the authenticated user to be a master user, have canCreateLeagues=true, or have their email listed in LEAGUE_CREATOR_EMAILS.",
+          "description": "Creates a league with a maximum of 50 members. Requires the authenticated user to be a master user, have canCreateLeagues=true, or have their email listed in LEAGUE_CREATOR_EMAILS. League creation closes 1 day before the first tournament kickoff.",
           "request": {
             "method": "POST",
             "header": [

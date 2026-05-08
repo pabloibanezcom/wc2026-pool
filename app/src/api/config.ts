@@ -4,8 +4,10 @@ import { TournamentCatalogTeam } from '../types';
 export interface PollConfig {
   groupPredictionsDeadline: string | null;
   tournamentPredictionsDeadline: string | null;
+  leagueCreationDeadline: string | null;
   groupPredictionsLocked: boolean;
   tournamentPredictionsLocked: boolean;
+  leagueCreationLocked: boolean;
   serverTime: string;
 }
 
