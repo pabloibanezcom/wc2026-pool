@@ -1,16 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { MATCH_STAGES, MATCH_STATUSES, MATCH_WINNERS } from '@wc2026/shared';
+import type { MatchStage, MatchStatus, MatchWinner } from '@wc2026/shared';
 
-export type MatchStage =
-  | 'GROUP'
-  | 'ROUND_OF_32'
-  | 'ROUND_OF_16'
-  | 'QUARTER_FINAL'
-  | 'SEMI_FINAL'
-  | 'THIRD_PLACE'
-  | 'FINAL';
-
-export type MatchStatus = 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED';
-export type MatchWinner = 'HOME' | 'AWAY' | 'DRAW';
+export type { MatchStage, MatchStatus, MatchWinner } from '@wc2026/shared';
 
 export interface ITeamInfo {
   name: string;
@@ -62,7 +54,7 @@ const matchResultSchema = new Schema<IMatchResult>(
   {
     homeGoals: { type: Number, required: true },
     awayGoals: { type: Number, required: true },
-    winner: { type: String, enum: ['HOME', 'AWAY', 'DRAW'], required: true },
+    winner: { type: String, enum: MATCH_WINNERS, required: true },
   },
   { _id: false }
 );
@@ -72,7 +64,7 @@ const matchSchema = new Schema<IMatch>(
     externalId: { type: Number, required: true, unique: true },
     stage: {
       type: String,
-      enum: ['GROUP', 'ROUND_OF_32', 'ROUND_OF_16', 'QUARTER_FINAL', 'SEMI_FINAL', 'THIRD_PLACE', 'FINAL'],
+      enum: MATCH_STAGES,
       required: true,
     },
     group: { type: String, default: null },
@@ -84,7 +76,7 @@ const matchSchema = new Schema<IMatch>(
     utcDate: { type: Date, required: true },
     status: {
       type: String,
-      enum: ['SCHEDULED', 'LIVE', 'FINISHED', 'POSTPONED'],
+      enum: MATCH_STATUSES,
       default: 'SCHEDULED',
     },
     result: { type: matchResultSchema, default: null },

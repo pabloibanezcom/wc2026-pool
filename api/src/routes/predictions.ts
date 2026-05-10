@@ -18,12 +18,20 @@ import {
 
 const router = Router();
 
+function isZodError(error: unknown): error is z.ZodError {
+  return error instanceof z.ZodError || (
+    typeof error === 'object' &&
+    error !== null &&
+    Array.isArray((error as z.ZodError).errors)
+  );
+}
+
 function handleRouteError(
   error: unknown,
   res: Response,
   options: { invalidMessage?: string; zodErrorAsDetails?: boolean } = {}
 ): boolean {
-  if (error instanceof z.ZodError) {
+  if (isZodError(error)) {
     if (options.zodErrorAsDetails === false) {
       res.status(400).json({ error: error.errors });
       return true;

@@ -1,7 +1,17 @@
-import { z } from 'zod';
+import {
+  groupPredictionInputSchema,
+  matchPredictionInputSchema,
+  tournamentPicksSchema,
+} from '@wc2026/shared';
+import type {
+  GroupPredictionInput,
+  MatchPredictionInput,
+  TournamentPredictionInput,
+} from '@wc2026/shared';
 import { GroupPrediction } from '../models/GroupPrediction';
 import { League } from '../models/League';
-import { Match, MatchWinner } from '../models/Match';
+import { Match } from '../models/Match';
+import type { MatchWinner } from '../models/Match';
 import { Prediction } from '../models/Prediction';
 import { TournamentPrediction } from '../models/TournamentPrediction';
 import {
@@ -21,45 +31,9 @@ const BEST_YOUNG_MAX_AGE = 21;
 const KNOCKOUT_STAGES = new Set(['ROUND_OF_32', 'ROUND_OF_16', 'QUARTER_FINAL', 'SEMI_FINAL', 'THIRD_PLACE', 'FINAL']);
 const GROUP_POSITION_POINTS = [8, 6, 3, 3];
 
-export const predictionSchema = z.object({
-  matchId: z.string().min(1),
-  homeGoals: z.number().int().min(0).max(15),
-  awayGoals: z.number().int().min(0).max(15),
-  qualifier: z.enum(['HOME', 'AWAY']).nullable().optional(),
-});
-
-export const groupPredictionSchema = z.object({
-  group: z.string().min(1).max(8),
-  orderedTeamCodes: z.array(z.string().min(1)).min(2).max(6).optional(),
-  orderedTeams: z.array(z.object({
-    code: z.string().min(1),
-  })).min(2).max(6).optional(),
-});
-
-const teamPickSchema = z.object({ name: z.string().min(1).optional(), code: z.string().min(1) }).optional();
-const playerPickSchema = z
-  .object({
-    name: z.string().min(1),
-    team: z.string().min(1),
-    code: z.string().min(1),
-    pos: z.enum(['FW', 'MF', 'DF', 'GK']),
-    age: z.number().int().min(0).max(60),
-  })
-  .optional();
-
-export const tournamentPredictionSchema = z.object({
-  champion: teamPickSchema,
-  runnerUp: teamPickSchema,
-  semi1: teamPickSchema,
-  semi2: teamPickSchema,
-  bestPlayer: playerPickSchema,
-  topScorer: playerPickSchema,
-  bestYoung: playerPickSchema,
-});
-
-type PredictionInput = z.infer<typeof predictionSchema>;
-type GroupPredictionInput = z.infer<typeof groupPredictionSchema>;
-type TournamentPredictionInput = z.infer<typeof tournamentPredictionSchema>;
+export const predictionSchema = matchPredictionInputSchema;
+export const groupPredictionSchema = groupPredictionInputSchema;
+export const tournamentPredictionSchema = tournamentPicksSchema;
 
 const TEAM_PICK_FIELDS = [
   ['champion', 'championCode'],
@@ -332,7 +306,7 @@ async function serializeTournamentPrediction<T extends Record<string, any>>(pred
   return serialized;
 }
 
-export async function saveMatchPrediction(userId: string, input: PredictionInput) {
+export async function saveMatchPrediction(userId: string, input: MatchPredictionInput) {
   const { matchId, homeGoals, awayGoals, qualifier } = input;
 
   const match = await Match.findById(matchId);
