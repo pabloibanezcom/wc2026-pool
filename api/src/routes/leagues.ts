@@ -49,7 +49,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
       return;
     }
 
-    if (await isLeagueCreationLocked()) {
+    if (!user.isMaster && await isLeagueCreationLocked()) {
       res.status(400).json({ error: 'League creation is closed.' });
       return;
     }
