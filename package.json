@@ -5,9 +5,12 @@
   "workspaces": [
     "app",
     "api",
-    "shared"
+    "shared",
+    "web"
   ],
   "scripts": {
+    "web": "npm run dev --workspace=web",
+    "web:build": "npm run build --workspace=web",
     "api": "npm run dev --workspace=api",
     "api:scenario": "npm run dev:scenario --workspace=api --",
     "app": "npm run start --workspace=app",
