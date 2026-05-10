@@ -42,14 +42,7 @@ nav.top .row { display: flex; align-items: center; justify-content: space-betwee
 .brand { display: flex; align-items: center; gap: 10px; font-family: 'FWC26', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; cursor: pointer; }
 .brand-mark {
   width: 32px; height: 32px; border-radius: 9999px;
-  background: #0f1115; color: #fff;
-  display: grid; place-items: center;
-  font-family: 'FWC26', sans-serif; font-weight: 600; font-size: 14px;
-  flex-shrink: 0;
-}
-.brand-mark-dot {
-  width: 14px; height: 14px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #00a87e, #007050);
+  flex-shrink: 0; object-fit: cover;
 }
 nav.top .links { display: flex; align-items: center; gap: 8px; }
 
