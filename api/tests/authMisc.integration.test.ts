@@ -42,34 +42,34 @@ describe('misc app and auth routes', () => {
     expect(response.status).toBe(200);
     expect(response.body.token).toEqual(expect.any(String));
     expect(response.body.user).toMatchObject({
-      email: 'dev@wc2026.test',
+      email: 'dev@worldporra.test',
       name: 'Dev Player',
     });
   });
 
   it('supports dev login as an existing test user by email', async () => {
     await User.create({
-      email: 'switchable@wc2026.test',
+      email: 'switchable@worldporra.test',
       name: 'Switchable Player',
       avatarUrl: '',
       passwordHash: null,
     });
 
     const response = await requestJson<{ token: string; user: { email: string; name: string } }>('/auth/dev', {
-      body: { email: 'SWITCHABLE@WC2026.TEST' },
+      body: { email: 'SWITCHABLE@WORLDPORRA.TEST' },
     });
 
     expect(response.status).toBe(200);
     expect(response.body.token).toEqual(expect.any(String));
     expect(response.body.user).toMatchObject({
-      email: 'switchable@wc2026.test',
+      email: 'switchable@worldporra.test',
       name: 'Switchable Player',
     });
   });
 
   it('does not create arbitrary users during dev impersonation', async () => {
     const response = await requestJson('/auth/dev', {
-      body: { email: 'missing@wc2026.test' },
+      body: { email: 'missing@worldporra.test' },
     });
 
     expect(response.status).toBe(404);
@@ -80,7 +80,7 @@ describe('misc app and auth routes', () => {
     googleMocks.verifyIdToken.mockResolvedValueOnce({
       getPayload: () => ({
         sub: 'google-user-001',
-        email: 'GOOGLE@WC2026.TEST',
+        email: 'GOOGLE@WORLDPORRA.TEST',
         name: 'Google Player',
         picture: 'https://example.test/avatar.png',
       }),
@@ -94,25 +94,25 @@ describe('misc app and auth routes', () => {
     expect(response.status).toBe(200);
     expect(response.body.token).toEqual(expect.any(String));
     expect(response.body.user).toMatchObject({
-      email: 'google@wc2026.test',
+      email: 'google@worldporra.test',
       name: 'Google Player',
       avatarUrl: 'https://example.test/avatar.png',
     });
 
-    const stored = await User.findOne({ email: 'google@wc2026.test' }).lean();
+    const stored = await User.findOne({ email: 'google@worldporra.test' }).lean();
     expect(stored?.googleId).toBe('google-user-001');
     expect(stored?.avatarUrl).toBe('https://example.test/avatar.png');
   });
 
   it('links a Google login to an existing email account and rejects failed Google auth', async () => {
     await requestJson('/auth/register', {
-      body: { email: 'player@wc2026.test', name: 'Password Player', password: 'valid-password' },
+      body: { email: 'player@worldporra.test', name: 'Password Player', password: 'valid-password' },
     });
 
     googleMocks.verifyIdToken.mockResolvedValueOnce({
       getPayload: () => ({
         sub: 'google-user-002',
-        email: 'player@wc2026.test',
+        email: 'player@worldporra.test',
         name: 'Linked Player',
         picture: '',
       }),
@@ -122,7 +122,7 @@ describe('misc app and auth routes', () => {
       body: { idToken: 'valid-google-token' },
     });
     expect(linked.status).toBe(200);
-    expect(linked.body.user).toMatchObject({ email: 'player@wc2026.test', name: 'Password Player' });
+    expect(linked.body.user).toMatchObject({ email: 'player@worldporra.test', name: 'Password Player' });
 
     googleMocks.verifyIdToken.mockRejectedValueOnce(new Error('invalid token'));
     const failed = await requestJson('/auth/google', {
@@ -136,7 +136,7 @@ describe('misc app and auth routes', () => {
     googleMocks.verifyIdToken.mockResolvedValueOnce({
       getPayload: () => ({
         sub: 'google-user-003',
-        email: 'google-name@wc2026.test',
+        email: 'google-name@worldporra.test',
         name: 'Very Long Google Account Name',
         picture: '',
       }),
@@ -157,7 +157,7 @@ describe('misc app and auth routes', () => {
     googleMocks.verifyIdToken.mockResolvedValueOnce({
       getPayload: () => ({
         sub: 'google-user-003',
-        email: 'google-name@wc2026.test',
+        email: 'google-name@worldporra.test',
         name: 'Very Long Google Account Name',
         picture: '',
       }),
@@ -172,10 +172,10 @@ describe('misc app and auth routes', () => {
 
   it('lets only master users update poll configuration', async () => {
     const player = await requestJson<{ token: string }>('/auth/register', {
-      body: { email: 'player@wc2026.test', name: 'Player', password: 'valid-password' },
+      body: { email: 'player@worldporra.test', name: 'Player', password: 'valid-password' },
     });
     const master = await requestJson<{ token: string }>('/auth/register', {
-      body: { email: 'master@wc2026.test', name: 'Master', password: 'valid-password' },
+      body: { email: 'master@worldporra.test', name: 'Master', password: 'valid-password' },
     });
     const deadline = new Date('2026-06-11T12:00:00Z').toISOString();
 

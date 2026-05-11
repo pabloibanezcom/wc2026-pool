@@ -7,7 +7,7 @@ import { TOKEN_STORAGE_KEY } from '../store/tokenKey';
 
 let apiBaseUrl = resolveApiUrl();
 export const API_URL = apiBaseUrl;
-const LANGUAGE_STORAGE_KEY = 'wc2026.language';
+const LANGUAGE_STORAGE_KEY = 'world-porra.language';
 let activeLanguage: 'en' | 'es' | null = null;
 
 export function setApiLanguage(language: 'en' | 'es') {

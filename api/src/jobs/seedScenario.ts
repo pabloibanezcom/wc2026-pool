@@ -101,49 +101,49 @@ const GENERATED_COLLECTIONS = new Set(['predictions', 'grouppredictions', 'tourn
 
 const DEMO_USERS: DemoUser[] = [
   {
-    email: 'dev@wc2026.test',
+    email: 'dev@worldporra.test',
     name: 'Dev Player',
     googleId: 'dev-user-001',
     profile: { coverage: 1, exactEvery: 4, outcomeBias: 0, volatility: 1 },
   },
   {
-    email: 'alex@wc2026.test',
+    email: 'alex@worldporra.test',
     name: 'Alex Rivera',
     googleId: 'scenario-demo-alex',
     profile: { coverage: 0.98, exactEvery: 5, outcomeBias: 1, volatility: 2 },
   },
   {
-    email: 'marta@wc2026.test',
+    email: 'marta@worldporra.test',
     name: 'Marta Silva',
     googleId: 'scenario-demo-marta',
     profile: { coverage: 0.92, exactEvery: 6, outcomeBias: 2, volatility: 1 },
   },
   {
-    email: 'sam@wc2026.test',
+    email: 'sam@worldporra.test',
     name: 'Sam Patel',
     googleId: 'scenario-demo-sam',
     profile: { coverage: 0.86, exactEvery: 8, outcomeBias: 3, volatility: 2 },
   },
   {
-    email: 'lucia@wc2026.test',
+    email: 'lucia@worldporra.test',
     name: 'Lucia Martin',
     googleId: 'scenario-demo-lucia',
     profile: { coverage: 0.8, exactEvery: 7, outcomeBias: 4, volatility: 3 },
   },
   {
-    email: 'jamie@wc2026.test',
+    email: 'jamie@worldporra.test',
     name: 'Jamie Brooks',
     googleId: 'scenario-demo-jamie',
     profile: { coverage: 0.72, exactEvery: 10, outcomeBias: 5, volatility: 2 },
   },
   {
-    email: 'nina@wc2026.test',
+    email: 'nina@worldporra.test',
     name: 'Nina Kovac',
     googleId: 'scenario-demo-nina',
     profile: { coverage: 0.65, exactEvery: 9, outcomeBias: 6, volatility: 3 },
   },
   {
-    email: 'omar@wc2026.test',
+    email: 'omar@worldporra.test',
     name: 'Omar Hassan',
     googleId: 'scenario-demo-omar',
     profile: { coverage: 0.58, exactEvery: 12, outcomeBias: 7, volatility: 4 },
@@ -302,7 +302,7 @@ async function seedDemoUsersAndLeagues(db: Db): Promise<{ users: RawDoc[]; leagu
             name: demo.name,
             avatarUrl: '',
             passwordHash,
-            isMaster: demo.email === 'dev@wc2026.test',
+            isMaster: demo.email === 'dev@worldporra.test',
             updatedAt: now,
           },
           $setOnInsert: {
@@ -321,7 +321,7 @@ async function seedDemoUsersAndLeagues(db: Db): Promise<{ users: RawDoc[]; leagu
   const users = await db.collection('users').find({}).sort({ email: 1 }).toArray();
   const demoUsers = await db.collection('users').find({ email: { $in: DEMO_USERS.map((user) => user.email) } }).sort({ email: 1 }).toArray();
   const userByEmail = new Map(users.map((user) => [user.email, user]));
-  const owner = userByEmail.get('dev@wc2026.test') ?? users[0];
+  const owner = userByEmail.get('dev@worldporra.test') ?? users[0];
 
   const leagueSpecs = [
     {
@@ -332,14 +332,14 @@ async function seedDemoUsersAndLeagues(db: Db): Promise<{ users: RawDoc[]; leagu
     {
       name: 'Family Sweepstake',
       inviteCode: 'FAM026',
-      members: ['dev@wc2026.test', 'alex@wc2026.test', 'marta@wc2026.test', 'lucia@wc2026.test']
+      members: ['dev@worldporra.test', 'alex@worldporra.test', 'marta@worldporra.test', 'lucia@worldporra.test']
         .map((email) => userByEmail.get(email)?._id)
         .filter(isObjectId),
     },
     {
       name: 'Office League',
       inviteCode: 'OFF026',
-      members: ['dev@wc2026.test', 'sam@wc2026.test', 'jamie@wc2026.test', 'nina@wc2026.test', 'omar@wc2026.test']
+      members: ['dev@worldporra.test', 'sam@worldporra.test', 'jamie@worldporra.test', 'nina@worldporra.test', 'omar@worldporra.test']
         .map((email) => userByEmail.get(email)?._id)
         .filter(isObjectId),
     },

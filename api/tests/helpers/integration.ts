@@ -5,7 +5,7 @@ import { CountryTeam } from '../../src/models/CountryTeam';
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-with-enough-length';
-process.env.MASTER_USER_EMAIL = 'master@wc2026.test';
+process.env.MASTER_USER_EMAIL = 'master@worldporra.test';
 process.env.SYNC_API_KEY = 'test-sync-key';
 process.env.VAPID_PUBLIC_KEY = 'test-public-key';
 process.env.VAPID_PRIVATE_KEY = '';

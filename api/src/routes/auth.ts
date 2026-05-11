@@ -239,10 +239,10 @@ router.post('/dev', async (req, res: Response): Promise<void> => {
         { googleId: 'dev-user-001' },
         {
           googleId: 'dev-user-001',
-          email: 'dev@wc2026.test',
+          email: 'dev@worldporra.test',
           name: 'Dev Player',
           avatarUrl: '',
-          isMaster: isMasterEmail('dev@wc2026.test'),
+          isMaster: isMasterEmail('dev@worldporra.test'),
         },
         { upsert: true, new: true }
       );

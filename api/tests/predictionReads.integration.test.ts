@@ -17,7 +17,7 @@ afterAll(async () => {
   await stopIntegrationServer();
 });
 
-async function registerPlayer(email = 'player@wc2026.test') {
+async function registerPlayer(email = 'player@worldporra.test') {
   const response = await requestJson<{ token: string; user: { id: string } }>('/auth/register', {
     body: { email, name: 'Player', password: 'valid-password' },
   });

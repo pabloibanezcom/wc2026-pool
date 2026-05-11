@@ -16,7 +16,7 @@ afterAll(async () => {
   await stopIntegrationServer();
 });
 
-async function registerPlayer(email = 'player@wc2026.test') {
+async function registerPlayer(email = 'player@worldporra.test') {
   const response = await requestJson<{ token: string; user: { id: string } }>('/auth/register', {
     body: { email, name: 'Player', password: 'valid-password' },
   });
@@ -172,8 +172,8 @@ describe('match predictions', () => {
   });
 
   it('only reveals other users predictions after kickoff', async () => {
-    const playerA = await registerPlayer('player-a@wc2026.test');
-    const playerB = await registerPlayer('player-b@wc2026.test');
+    const playerA = await registerPlayer('player-a@worldporra.test');
+    const playerB = await registerPlayer('player-b@worldporra.test');
     const upcoming = await createMatch();
     const started = await createMatch({
       externalId: 456,
@@ -368,7 +368,7 @@ describe('group predictions', () => {
     });
     expect(beforeDeadline.status).toBe(200);
 
-    const master = await registerPlayer('master@wc2026.test');
+    const master = await registerPlayer('master@worldporra.test');
     const update = await requestJson('/config/poll', {
       method: 'PATCH',
       token: master.token,
@@ -390,7 +390,7 @@ describe('group predictions', () => {
 describe('tournament predictions', () => {
   it('locks tournament predictions using the global poll deadline', async () => {
     const player = await registerPlayer();
-    const master = await registerPlayer('master@wc2026.test');
+    const master = await registerPlayer('master@worldporra.test');
     await createMatch({ externalId: 501, homeTeamCode: 'ARG', awayTeamCode: 'ESP' });
 
     const open = await requestJson('/predictions/tournament', {

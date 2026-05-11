@@ -12,7 +12,7 @@ export type ApiScenarioSlug =
   | 'final-eve'
   | 'complete';
 
-export const API_SCENARIO_STORAGE_KEY = 'wc2026.apiScenario';
+export const API_SCENARIO_STORAGE_KEY = 'world-porra.apiScenario';
 
 export const API_SCENARIOS: Array<{ slug: ApiScenarioSlug; label: string }> = [
   { slug: '', label: 'Base test DB' },

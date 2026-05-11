@@ -1,1 +1,1 @@
-export * from '@wc2026/shared';
+export * from '@world-porra/shared';

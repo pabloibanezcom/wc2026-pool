@@ -49,7 +49,7 @@ describe('notification routes', () => {
   });
 
   it('subscribes, updates, and deletes push subscriptions for the current user', async () => {
-    const { token, user } = await registerPlayer('player@wc2026.test');
+    const { token, user } = await registerPlayer('player@worldporra.test');
     const endpoint = 'https://push.example.test/subscription/1';
 
     const created = await requestJson('/notifications/subscribe', {
@@ -93,7 +93,7 @@ describe('notification routes', () => {
   });
 
   it('sends test notifications to the current user', async () => {
-    const { token, user } = await registerPlayer('player@wc2026.test');
+    const { token, user } = await registerPlayer('player@worldporra.test');
 
     const response = await requestJson('/notifications/test', { token, body: {} });
 
@@ -107,8 +107,8 @@ describe('notification routes', () => {
   });
 
   it('allows only master users to broadcast notifications', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
-    const player = await registerPlayer('player@wc2026.test');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
+    const player = await registerPlayer('player@worldporra.test');
 
     const forbidden = await requestJson('/notifications/broadcast', {
       token: player.token,

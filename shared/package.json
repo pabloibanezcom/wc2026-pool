@@ -1,5 +1,5 @@
 {
-  "name": "@wc2026/shared",
+  "name": "@world-porra/shared",
   "version": "1.0.0",
   "private": true,
   "main": "dist/index.js",

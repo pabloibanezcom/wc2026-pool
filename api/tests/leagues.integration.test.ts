@@ -39,8 +39,8 @@ async function createLeague(token: string, name = 'Friends League') {
 
 describe('league membership', () => {
   it('allows master and authorized users to create leagues and lets users join/list/read them', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
-    const member = await registerPlayer('member@wc2026.test', 'Member');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
+    const member = await registerPlayer('member@worldporra.test', 'Member');
 
     const forbidden = await requestJson('/leagues', {
       token: member.token,
@@ -82,7 +82,7 @@ describe('league membership', () => {
   });
 
   it('closes league creation one day before the tournament kickoff', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
     await Match.create({
       externalId: 600,
       stage: 'GROUP',
@@ -104,9 +104,9 @@ describe('league membership', () => {
   });
 
   it('rejects missing leagues, full leagues, and non-member reads', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
-    const member = await registerPlayer('member@wc2026.test', 'Member');
-    const outsider = await registerPlayer('outsider@wc2026.test', 'Outsider');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
+    const member = await registerPlayer('member@worldporra.test', 'Member');
+    const outsider = await registerPlayer('outsider@worldporra.test', 'Outsider');
     const league = await createLeague(master.token);
 
     const fullLeague = await League.create({
@@ -153,9 +153,9 @@ describe('league membership', () => {
   });
 
   it('allows admins to promote/demote members and blocks invalid admin changes', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
-    const member = await registerPlayer('member@wc2026.test', 'Member');
-    const outsider = await registerPlayer('outsider@wc2026.test', 'Outsider');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
+    const member = await registerPlayer('member@worldporra.test', 'Member');
+    const outsider = await registerPlayer('outsider@worldporra.test', 'Outsider');
     const league = await createLeague(master.token);
     await requestJson('/leagues/join', { token: member.token, body: { inviteCode: league.inviteCode } });
 
@@ -192,8 +192,8 @@ describe('league membership', () => {
   });
 
   it('allows only league admins to notify league members', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
-    const member = await registerPlayer('member@wc2026.test', 'Member');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
+    const member = await registerPlayer('member@worldporra.test', 'Member');
     const league = await createLeague(master.token);
     await requestJson('/leagues/join', { token: member.token, body: { inviteCode: league.inviteCode } });
 
@@ -218,8 +218,8 @@ describe('league membership', () => {
   });
 
   it('lets non-owner members leave but keeps the owner in the league', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
-    const member = await registerPlayer('member@wc2026.test', 'Member');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
+    const member = await registerPlayer('member@worldporra.test', 'Member');
     const league = await createLeague(master.token);
     await requestJson('/leagues/join', { token: member.token, body: { inviteCode: league.inviteCode } });
 
@@ -241,8 +241,8 @@ describe('league membership', () => {
   });
 
   it('allows only the league owner to delete a league', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
-    const member = await registerPlayer('member@wc2026.test', 'Member');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
+    const member = await registerPlayer('member@worldporra.test', 'Member');
     const league = await createLeague(master.token);
     await requestJson('/leagues/join', { token: member.token, body: { inviteCode: league.inviteCode } });
 
@@ -265,9 +265,9 @@ describe('league membership', () => {
 
 describe('league member prediction visibility', () => {
   it('returns finished predictions and upcoming pick status for league members only', async () => {
-    const master = await registerPlayer('master@wc2026.test', 'Master');
-    const member = await registerPlayer('member@wc2026.test', 'Member');
-    const outsider = await registerPlayer('outsider@wc2026.test', 'Outsider');
+    const master = await registerPlayer('master@worldporra.test', 'Master');
+    const member = await registerPlayer('member@worldporra.test', 'Member');
+    const outsider = await registerPlayer('outsider@worldporra.test', 'Outsider');
     const league = await createLeague(master.token);
     await requestJson('/leagues/join', { token: member.token, body: { inviteCode: league.inviteCode } });
 

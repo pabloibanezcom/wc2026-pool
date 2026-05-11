@@ -8,7 +8,7 @@ export type Language = 'en' | 'es';
 type TranslationValue = string | ((params: Record<string, string | number>) => string);
 type TranslationMap = Record<string, TranslationValue>;
 
-const LANGUAGE_STORAGE_KEY = 'wc2026.language';
+const LANGUAGE_STORAGE_KEY = 'world-porra.language';
 
 function getDeviceLanguage(): Language {
   const locale = Localization.getLocales()[0];
