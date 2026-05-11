@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { MATCH_STAGES, MATCH_STATUSES, MATCH_WINNERS } from '@wc2026/shared';
-import type { MatchStage, MatchStatus, MatchWinner } from '@wc2026/shared';
+import { MATCH_STAGES, MATCH_STATUSES, MATCH_WINNERS } from '../shared';
+import type { MatchStage, MatchStatus, MatchWinner } from '../shared';
 
-export type { MatchStage, MatchStatus, MatchWinner } from '@wc2026/shared';
+export type { MatchStage, MatchStatus, MatchWinner } from '../shared';
 
 export interface ITeamInfo {
   name: string;

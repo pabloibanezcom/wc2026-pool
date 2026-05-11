@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "dev:scenario": "tsx src/jobs/runScenarioApi.ts",
-    "prebuild": "npm run build --workspace=@wc2026/shared",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "vitest run",
@@ -30,7 +29,6 @@
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
     "web-push": "^3.6.7",
-    "@wc2026/shared": "1.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

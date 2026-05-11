@@ -2,12 +2,12 @@ import {
   groupPredictionInputSchema,
   matchPredictionInputSchema,
   tournamentPicksSchema,
-} from '@wc2026/shared';
+} from '../shared';
 import type {
   GroupPredictionInput,
   MatchPredictionInput,
   TournamentPredictionInput,
-} from '@wc2026/shared';
+} from '../shared';
 import { GroupPrediction } from '../models/GroupPrediction';
 import { League } from '../models/League';
 import { Match } from '../models/Match';
