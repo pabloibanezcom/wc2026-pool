@@ -16,6 +16,14 @@ const INVITE_CODE_LENGTH = 8;
 const INVITE_CODE_MIN_LENGTH = 6;
 const INVITE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
+function normalizeInviteCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function generateInviteCode(): string {
   return Array.from({ length: INVITE_CODE_LENGTH }, () =>
     INVITE_CODE_ALPHABET[crypto.randomInt(INVITE_CODE_ALPHABET.length)]
@@ -50,7 +58,7 @@ const createLeagueSchema = z.object({
 });
 
 const joinLeagueSchema = z.object({
-  inviteCode: z.string().trim().min(INVITE_CODE_MIN_LENGTH).max(INVITE_CODE_LENGTH).transform((code) => code.toUpperCase()),
+  inviteCode: z.string().trim().min(INVITE_CODE_MIN_LENGTH).max(INVITE_CODE_LENGTH).transform(normalizeInviteCode),
 });
 
 const setAdminSchema = z.object({
@@ -94,7 +102,7 @@ router.post('/join', authMiddleware, async (req: AuthRequest, res: Response): Pr
   try {
     const { inviteCode } = joinLeagueSchema.parse(req.body);
 
-    const league = await League.findOne({ inviteCode });
+    const league = await League.findOne({ inviteCode: new RegExp(`^${escapeRegex(inviteCode)}$`, 'i') });
     if (!league) {
       res.status(404).json({ error: 'League not found' });
       return;

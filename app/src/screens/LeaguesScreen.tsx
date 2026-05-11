@@ -8,6 +8,7 @@ import { League } from '../types';
 import { useAuthStore } from '../store/authStore';
 import LeagueCard from '../components/LeagueCard';
 import LoadingView from '../components/ui/LoadingView';
+import JoinLeagueSheet from '../components/JoinLeagueSheet';
 import { colors, fonts } from '../theme';
 import { useI18n } from '../i18n';
 
@@ -18,6 +19,7 @@ export default function LeaguesScreen() {
   const [pollConfig, setPollConfig] = useState<PollConfig | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [joinSheetVisible, setJoinSheetVisible] = useState(false);
   const navigation = useNavigation<any>();
   const canCreateLeagues = !!(user?.canCreateLeagues || user?.isMaster) && !pollConfig?.leagueCreationLocked;
 
@@ -81,7 +83,7 @@ export default function LeaguesScreen() {
                   <Text style={styles.createButtonText}>{t('leagues.createLeague')}</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('JoinLeague')}>
+              <TouchableOpacity style={styles.joinButton} onPress={() => setJoinSheetVisible(true)}>
                 <Text style={styles.joinButtonText}>{t('leagues.joinLeague')}</Text>
               </TouchableOpacity>
             </View>
@@ -94,6 +96,14 @@ export default function LeaguesScreen() {
           }
         />
       )}
+      <JoinLeagueSheet
+        visible={joinSheetVisible}
+        onClose={() => setJoinSheetVisible(false)}
+        onJoined={(league) => {
+          setJoinSheetVisible(false);
+          navigation.navigate('LeagueDetail', { leagueId: league._id });
+        }}
+      />
     </SafeAreaView>
   );
 }

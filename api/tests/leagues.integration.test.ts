@@ -125,6 +125,20 @@ describe('league membership', () => {
     });
     expect(missing.status).toBe(404);
 
+    const legacyLowercaseLeague = await League.create({
+      name: 'Legacy Code',
+      inviteCode: 'nvr4lpjp',
+      ownerId: master.user.id,
+      members: [{ userId: master.user.id, isAdmin: true }],
+    });
+
+    const legacyJoin = await requestJson<{ league: { _id: string } }>('/leagues/join', {
+      token: member.token,
+      body: { inviteCode: 'NVR4LPJP' },
+    });
+    expect(legacyJoin.status).toBe(200);
+    expect(legacyJoin.body.league._id).toBe(String(legacyLowercaseLeague._id));
+
     const full = await requestJson('/leagues/join', {
       token: member.token,
       body: { inviteCode: fullLeague.inviteCode },

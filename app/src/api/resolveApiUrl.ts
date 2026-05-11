@@ -79,5 +79,10 @@ export function resolveApiUrl(): string {
 
 export function resolveApiUrlForScenario(scenario: string | null | undefined): string {
   const resolvedUrl = resolveApiUrl();
+  const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  if (configuredUrl) {
+    return resolvedUrl;
+  }
+
   return normalizeScenario(scenario) && isLocalApiUrl(resolvedUrl) ? VERCEL_API_URL : resolvedUrl;
 }

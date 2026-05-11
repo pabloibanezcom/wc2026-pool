@@ -15,7 +15,6 @@ import PicksScreen from '../screens/PicksScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import RulesScreen from '../screens/RulesScreen';
 import CreateLeagueScreen from '../screens/CreateLeagueScreen';
-import JoinLeagueScreen from '../screens/JoinLeagueScreen';
 import LeagueDetailScreen from '../screens/LeagueDetailScreen';
 import MatchDetailScreen from '../screens/MatchDetailScreen';
 import MemberScreen from '../screens/MemberScreen';
@@ -129,11 +128,6 @@ export default function RootNavigator() {
                 animation: 'fade',
                 contentStyle: { backgroundColor: 'transparent' },
               }}
-            />
-            <Stack.Screen
-              name="JoinLeague"
-              component={JoinLeagueScreen}
-              options={{ headerShown: true, title: t('nav.joinLeague'), presentation: 'modal', animation: 'slide_from_bottom' }}
             />
             <Stack.Screen
               name="MatchDetail"

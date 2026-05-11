@@ -7,13 +7,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Share,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import NotifyModal from '../components/NotifyModal';
+import InviteSheet from '../components/InviteSheet';
+import LeaveConfirmModal from '../components/LeaveConfirmModal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CommonActions, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { deleteLeague, fetchLeague, notifyLeagueMembers } from '../api/leagues';
+import { deleteLeague, fetchLeague, leaveLeague, notifyLeagueMembers } from '../api/leagues';
 import { League, LeagueMember } from '../types';
 import { colors, fonts } from '../theme';
 import Avatar from '../components/ui/Avatar';
@@ -47,6 +49,8 @@ export default function LeagueDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [notifyModalVisible, setNotifyModalVisible] = useState(false);
+  const [inviteSheetVisible, setInviteSheetVisible] = useState(false);
+  const [leaveModalVisible, setLeaveModalVisible] = useState(false);
 
   const loadLeague = useCallback(async () => {
     try {
@@ -67,12 +71,6 @@ export default function LeagueDetailScreen() {
     setRefreshing(false);
   };
 
-  const handleShare = async () => {
-    if (!league) return;
-    await Share.share({
-      message: t('league.shareMessage', { name: league.name, code: league.inviteCode }),
-    });
-  };
 
   if (loading) {
     return (
@@ -128,6 +126,17 @@ export default function LeagueDetailScreen() {
     );
   };
 
+  const handleLeaveConfirm = async () => {
+    try {
+      await leaveLeague(league._id);
+      navigation.dispatch(
+        CommonActions.reset({ index: 0, routes: [{ name: 'LeagueList' }] })
+      );
+    } catch (err: any) {
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('league.leaveFailed')));
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -136,8 +145,13 @@ export default function LeagueDetailScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{league.name}</Text>
-          <Text style={styles.subtitle}>{t('league.playersGroupStage', { count: league.members.length })}</Text>
+          <View style={styles.titleMain}>
+            <Text style={styles.title}>{league.name}</Text>
+            <Text style={styles.subtitle}>{t('league.playersGroupStage', { count: league.members.length })}</Text>
+          </View>
+          <TouchableOpacity style={styles.shareIconBtn} onPress={() => setInviteSheetVisible(true)} activeOpacity={0.7}>
+            <Ionicons name="share-outline" size={20} color={colors.muted} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.statsRow}>
@@ -145,16 +159,6 @@ export default function LeagueDetailScreen() {
           <StatCard label={t('league.yourPoints')} value={`${myPoints}`} color={colors.text} />
           <StatCard label={t('league.leader')} value={leader ? `${memberPoints(leader)} ${t('common.pointsShort')}` : '—'} color={colors.text} />
         </View>
-
-        <TouchableOpacity style={styles.inviteCard} onPress={handleShare} activeOpacity={0.85}>
-          <View>
-            <Text style={styles.inviteLabel}>{t('league.inviteCode')}</Text>
-            <Text style={styles.inviteCode}>{league.inviteCode}</Text>
-          </View>
-          <View style={styles.sharePill}>
-            <Text style={styles.shareText}>{t('common.share')}</Text>
-          </View>
-        </TouchableOpacity>
 
         {isAdmin && (
           <TouchableOpacity style={styles.notifyBtn} onPress={() => setNotifyModalVisible(true)} activeOpacity={0.85}>
@@ -204,6 +208,12 @@ export default function LeagueDetailScreen() {
             ))}
           </View>
         </View>
+
+        {!isOwner && (
+          <TouchableOpacity style={styles.leaveBtn} onPress={() => setLeaveModalVisible(true)} activeOpacity={0.85}>
+            <Text style={styles.deleteBtnText}>{t('league.leaveAction')}</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       <NotifyModal
@@ -211,6 +221,18 @@ export default function LeagueDetailScreen() {
         title={t('league.notifyTitle', { name: league.name })}
         onClose={() => setNotifyModalVisible(false)}
         onSend={(title, body) => notifyLeagueMembers(league._id, title, body)}
+      />
+      <InviteSheet
+        visible={inviteSheetVisible}
+        leagueName={league.name}
+        inviteCode={league.inviteCode}
+        onClose={() => setInviteSheetVisible(false)}
+      />
+      <LeaveConfirmModal
+        visible={leaveModalVisible}
+        leagueName={league.name}
+        onClose={() => setLeaveModalVisible(false)}
+        onConfirm={handleLeaveConfirm}
       />
     </SafeAreaView>
   );
@@ -285,9 +307,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
   scroll: { padding: 18, paddingBottom: 20, gap: 18 },
 
-  titleRow: { marginTop: 4 },
+  titleRow: { marginTop: 4, flexDirection: 'row', alignItems: 'flex-start' },
+  titleMain: { flex: 1 },
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.display },
   subtitle: { color: colors.muted, fontSize: 13, marginTop: 3, fontFamily: fonts.body },
+  shareIconBtn: { padding: 6, marginTop: 4 },
 
   sectionLabel: {
     color: colors.dim,
@@ -321,34 +345,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     marginTop: 2,
   },
-
-  inviteCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    paddingHorizontal: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  inviteLabel: { color: colors.dim, fontFamily: fonts.bodyMedium, fontSize: 11, textTransform: 'uppercase' },
-  inviteCode: {
-    color: colors.text,
-    fontFamily: fonts.displayBold,
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: 3,
-    marginTop: 3,
-  },
-  sharePill: {
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  shareText: { color: '#fff', fontFamily: fonts.bodyMedium, fontSize: 12, fontWeight: '600' },
 
   raceCard: {
     backgroundColor: colors.card,
@@ -415,5 +411,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 14,
     fontWeight: '600',
+  },
+  leaveBtn: {
+    backgroundColor: 'transparent',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    paddingVertical: 13,
+    alignItems: 'center',
   },
 });

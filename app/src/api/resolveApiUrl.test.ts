@@ -110,9 +110,17 @@ describe('resolveApiUrl', () => {
     expect(resolveApiUrl()).toBe('https://world-porra-api.vercel.app');
   });
 
-  it('uses the hosted API for runtime scenarios when the resolved URL is local', async () => {
+  it('respects explicitly configured local API URLs for runtime scenarios', async () => {
     const { resolveApiUrlForScenario } = await loadResolveApiUrl({
       apiUrl: 'http://localhost:3000',
+      platform: 'ios',
+    });
+
+    expect(resolveApiUrlForScenario('pre-tournament')).toBe('http://localhost:3000');
+  });
+
+  it('uses the hosted API for runtime scenarios when no API URL is configured', async () => {
+    const { resolveApiUrlForScenario } = await loadResolveApiUrl({
       platform: 'ios',
     });
 
