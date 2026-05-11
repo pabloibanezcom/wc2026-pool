@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 
 const DEFAULT_API_PORT = '3000';
 const LOCALHOST_API_URL = `http://localhost:${DEFAULT_API_PORT}`;
-export const VERCEL_API_URL = 'https://wc2026-pool-api.vercel.app';
+export const VERCEL_API_URL = 'https://world-porra-api.vercel.app';
 
 function stripTrailingSlash(value: string): string {
   return value.replace(/\/+$/, '');

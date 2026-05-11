@@ -147,13 +147,13 @@ npm run app:vercel:scenario -- group-mid
 The app keeps using the Vercel API URL and sends `X-WC-Scenario` with each request. You can also hit the API directly with `?scenario=group-mid`, for example:
 
 ```bash
-https://wc2026-pool-api.vercel.app/health?scenario=group-mid
+https://world-porra-api.vercel.app/health?scenario=group-mid
 ```
 
 If your current network cannot connect to Atlas, deploy the API and seed the scenario databases from Vercel instead:
 
 ```bash
-curl -X POST https://wc2026-pool-api.vercel.app/admin/scenarios/seed \
+curl -X POST https://world-porra-api.vercel.app/admin/scenarios/seed \
   -H "x-sync-api-key: $SYNC_API_KEY" \
   -H "content-type: application/json" \
   -d '{"scenarios":["group-mid"]}'
@@ -162,7 +162,7 @@ curl -X POST https://wc2026-pool-api.vercel.app/admin/scenarios/seed \
 To seed every scenario from Vercel:
 
 ```bash
-curl -X POST https://wc2026-pool-api.vercel.app/admin/scenarios/seed \
+curl -X POST https://world-porra-api.vercel.app/admin/scenarios/seed \
   -H "x-sync-api-key: $SYNC_API_KEY" \
   -H "content-type: application/json" \
   -d '{"scenarios":"all"}'

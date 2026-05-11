@@ -68,7 +68,7 @@ describe('resolveApiUrl', () => {
       platform: 'ios',
     });
 
-    expect(resolveApiUrl()).toBe('https://wc2026-pool-api.vercel.app');
+    expect(resolveApiUrl()).toBe('https://world-porra-api.vercel.app');
   });
 
   it('prefers configured API URLs and strips trailing slashes', async () => {
@@ -87,7 +87,7 @@ describe('resolveApiUrl', () => {
       dev: false,
     });
 
-    expect(resolveApiUrl()).toBe('https://wc2026-pool-api.vercel.app');
+    expect(resolveApiUrl()).toBe('https://world-porra-api.vercel.app');
   });
 
   it('uses the hosted API when a build scenario is active and the configured URL is local', async () => {
@@ -97,7 +97,7 @@ describe('resolveApiUrl', () => {
       platform: 'ios',
     });
 
-    expect(resolveApiUrl()).toBe('https://wc2026-pool-api.vercel.app');
+    expect(resolveApiUrl()).toBe('https://world-porra-api.vercel.app');
   });
 
   it('uses the hosted API when a web URL scenario is active and the configured URL is local', async () => {
@@ -107,7 +107,7 @@ describe('resolveApiUrl', () => {
       platform: 'web',
     });
 
-    expect(resolveApiUrl()).toBe('https://wc2026-pool-api.vercel.app');
+    expect(resolveApiUrl()).toBe('https://world-porra-api.vercel.app');
   });
 
   it('uses the hosted API for runtime scenarios when the resolved URL is local', async () => {
@@ -116,7 +116,7 @@ describe('resolveApiUrl', () => {
       platform: 'ios',
     });
 
-    expect(resolveApiUrlForScenario('pre-tournament')).toBe('https://wc2026-pool-api.vercel.app');
+    expect(resolveApiUrlForScenario('pre-tournament')).toBe('https://world-porra-api.vercel.app');
   });
 
   it('derives a LAN API URL from Expo host URI', async () => {
