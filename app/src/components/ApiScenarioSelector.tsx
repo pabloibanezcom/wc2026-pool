@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { API_SCENARIOS, ApiScenarioSlug, getActiveApiScenario, getScenarioLabel, setActiveApiScenario } from '../api/scenario';
+import { API_SCENARIOS, ApiScenarioSlug, DEFAULT_API_SCENARIO, getActiveApiScenario, getScenarioLabel, setActiveApiScenario } from '../api/scenario';
 import { setApiScenarioBaseUrl } from '../api/client';
 import { useAuthStore } from '../store/authStore';
 import { colors, fonts } from '../theme';
@@ -9,7 +9,7 @@ import { useI18n } from '../i18n';
 export default function ApiScenarioSelector() {
   const { t } = useI18n();
   const signOut = useAuthStore((state) => state.signOut);
-  const [activeScenario, setActiveScenario] = useState<ApiScenarioSlug>('');
+  const [activeScenario, setActiveScenario] = useState<ApiScenarioSlug>(DEFAULT_API_SCENARIO);
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
@@ -32,8 +32,7 @@ export default function ApiScenarioSelector() {
 
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const url = new URL(window.location.href);
-      if (scenario) url.searchParams.set('scenario', scenario);
-      else url.searchParams.delete('scenario');
+      url.searchParams.set('scenario', scenario);
       window.location.href = url.toString();
     }
   };
@@ -68,7 +67,7 @@ export default function ApiScenarioSelector() {
                 const selected = scenario.slug === activeScenario;
                 return (
                   <TouchableOpacity
-                    key={scenario.slug || 'base'}
+                    key={scenario.slug}
                     style={[styles.option, selected && styles.optionSelected]}
                     onPress={() => handleSelect(scenario.slug)}
                     activeOpacity={0.85}

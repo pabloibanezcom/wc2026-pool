@@ -138,7 +138,7 @@ SCENARIO_BASE_MONGODB_URI=mongodb+srv://.../test?appName=Cluster0
 
 `SCENARIO_BASE_MONGODB_URI` is optional; when omitted, the API derives scenario databases from `MONGODB_URI`. For example, a base DB of `test` maps `group-mid` to `test_group_mid`.
 
-Then start the mobile app against the deployed API and choose a phase:
+Then start the mobile app against the deployed API and choose a phase. The app defaults to `pre-tournament`; there is no selectable plain/base test database in the app:
 
 ```bash
 npm run app:vercel:scenario -- group-mid

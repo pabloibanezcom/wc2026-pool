@@ -138,9 +138,9 @@ const translations: Record<Language, TranslationMap> = {
     'profile.nameUpdateFailed': 'Failed to update display name.',
     'profile.signOut': 'Sign out',
 
-    'scenario.label': 'Test database',
-    'scenario.select': 'Select test database',
-    'scenario.switchHint': 'Switching database signs you out because each scenario has its own users and predictions.',
+    'scenario.label': 'Tournament phase',
+    'scenario.select': 'Select tournament phase',
+    'scenario.switchHint': 'Switching phase signs you out because each scenario has its own users and predictions.',
 
     'league.notFound': 'League not found',
     'league.playersGroupStage': ({ count }) => `${count} players · Group Stage`,
@@ -479,9 +479,9 @@ const translations: Record<Language, TranslationMap> = {
     'profile.nameUpdateFailed': 'No se pudo actualizar el nombre visible.',
     'profile.signOut': 'Cerrar sesión',
 
-    'scenario.label': 'Base de datos de prueba',
-    'scenario.select': 'Seleccionar base de datos',
-    'scenario.switchHint': 'Cambiar de base de datos cierra la sesión porque cada escenario tiene sus propios usuarios y pronósticos.',
+    'scenario.label': 'Fase del torneo',
+    'scenario.select': 'Seleccionar fase del torneo',
+    'scenario.switchHint': 'Cambiar de fase cierra la sesión porque cada escenario tiene sus propios usuarios y pronósticos.',
 
     'league.notFound': 'Liga no encontrada',
     'league.playersGroupStage': ({ count }) => `${count} jugadores · Fase de grupos`,
