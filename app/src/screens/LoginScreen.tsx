@@ -139,7 +139,7 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        <ApiScenarioSelector />
+        {process.env.EXPO_PUBLIC_ENABLE_SCENARIO_SWITCHER === 'true' && <ApiScenarioSelector />}
 
         {pendingInviteCode ? (
           <View style={styles.inviteBanner}>
