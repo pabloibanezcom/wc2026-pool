@@ -58,7 +58,7 @@ apiClient.interceptors.request.use(async (config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  if (apiScenario) {
+  if (apiScenario && process.env.EXPO_PUBLIC_ENABLE_SCENARIO_SWITCHER === 'true') {
     config.headers['X-WC-Scenario'] = apiScenario;
   }
   const savedLanguage = activeLanguage ?? await getToken(LANGUAGE_STORAGE_KEY);
