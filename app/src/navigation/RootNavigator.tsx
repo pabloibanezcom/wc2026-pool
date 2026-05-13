@@ -125,6 +125,8 @@ export default function RootNavigator() {
             .then((league) => setPendingInvite(invite.code, league.name))
             .catch(() => {});
         }
+      } else if (Platform.OS === 'web') {
+        clearPendingInviteCode().catch(() => {});
       }
     };
 
@@ -136,7 +138,7 @@ export default function RootNavigator() {
 
     const subscription = Linking.addEventListener('url', ({ url }) => handleUrl(url));
     return () => subscription.remove();
-  }, [setPendingInvite]);
+  }, [setPendingInvite, clearPendingInviteCode]);
 
   useEffect(() => {
     if (!user || !pendingInviteCode || handledInviteRef.current === pendingInviteCode) return;
